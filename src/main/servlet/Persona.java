@@ -27,7 +27,19 @@ public class Persona {
 		this.comuneNascita = comuneNascita;
 		this.dataNascita = dataNascita;
 		this.email = email;
+	}
 
+	public Persona(String cf, String nome, String cognome, String sesso, String statoNascita, String provinciaNascita, String comuneNascita, LocalDate dataNascita, String email, int abilitato) {
+		this.cf = cf;
+		this.nome = nome;
+		this.cognome = cognome;
+		this.sesso = sesso;
+		this.statoNascita = statoNascita;
+		this.provinciaNascita = provinciaNascita;
+		this.comuneNascita = comuneNascita;
+		this.dataNascita = dataNascita;
+		this.email = email;
+		this.abilitato = abilitato;
 	}
 
 	public String getCf() {

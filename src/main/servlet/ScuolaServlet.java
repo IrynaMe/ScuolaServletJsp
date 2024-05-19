@@ -19,8 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 public class ScuolaServlet extends HttpServlet {
     private ManageDb mioDB;
     private static final int RECORDS_PER_PAGE = 10;
-    String paramUsername = null;
-    String paramPassword = null;
+    String usernameCorrente = null;
+    String passwordCorrente = null;
 
     /**
      * this life-cycle method is invoked when this servlet is first accessed
@@ -42,12 +42,12 @@ public class ScuolaServlet extends HttpServlet {
      */
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String action = request.getParameter("action");
-        String personType = request.getParameter("personType"); // Extracting personType
+        String personType = request.getParameter("personType");
         try {
-            if ("cercaPersona".equals(action)) {
-                cercaPersonaPerCf(request, response, personType); // Passing personType to cercaPersonaPerCf
-            } else if ("stampaLista".equals(action)) {
-                stampaListaPersone(request, response, personType); // Passing personType to stampaListaPersone
+            if ("cercaPersona".equals(action)) { //in inputCf.html
+                cercaPersonaPerCf(request, response, personType);
+            } else if ("stampaLista".equals(action)) {//in welcome.html
+                stampaListaPersone(request, response, personType);
             } else {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
             }
@@ -65,7 +65,7 @@ public class ScuolaServlet extends HttpServlet {
         if (formTypeScelta.equals("login")) {
             login(request, response);
         } else if (formTypeScelta.equals("newPerson")) {
-           inserimentoPersona(request, response);
+            inserimentoPersona(request, response);
         }
     }
 
@@ -79,30 +79,36 @@ public class ScuolaServlet extends HttpServlet {
         mioDB.disconnect();
     }
 
-    private void login(HttpServletRequest request, HttpServletResponse response )throws IOException {
+    private void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResultSet resultSet = null;
         //take params from form or if not-use inserted before from class properties
-        if (request.getParameter("username")!=null&&request.getParameter("password")!=null){
-            paramUsername = request.getParameter("username");
-            paramPassword = request.getParameter("password");
+        if (request.getParameter("username") != null && request.getParameter("password") != null) {
+            usernameCorrente = request.getParameter("username");
+            passwordCorrente = request.getParameter("password");
         }
-        try {
-            String sqlQuery = "SELECT * FROM utente WHERE username='" + paramUsername + "' AND password='" + paramPassword + "' AND abilitato=1";
-            resultSet = mioDB.readInDb(sqlQuery);
-            if (resultSet.next()) {
-                RequestDispatcher dispatcher = request.getRequestDispatcher("/welcome.html");
-                dispatcher.forward(request, response);
-            } else {
-                PrintWriter writer = response.getWriter();
-                writer.println("<html><body><h2>Non trovo utente con " + paramUsername + " e password inserito!</h2>");
-                writer.println("<p>Utente NON autorizzato</p>");
-                writer.println("</body></html>");
-                writer.flush();
+        if (usernameCorrente != null & passwordCorrente != null) {
+            try {
+                String sqlQuery = "SELECT * FROM utente WHERE username='" + usernameCorrente + "' AND password='" + passwordCorrente + "' AND abilitato=1";
+                resultSet = mioDB.readInDb(sqlQuery);
+                if (resultSet.next()) {
+                    RequestDispatcher dispatcher = request.getRequestDispatcher("/welcome.html");
+                    dispatcher.forward(request, response);
+                } else {
+                    PrintWriter writer = response.getWriter();
+                    writer.println("<html><body><h2>Non trovo utente con " + usernameCorrente + " e password inserito!</h2>");
+                    writer.println("<p>Utente NON autorizzato</p>");
+                    writer.println("</body></html>");
+                    writer.flush();
+                }
+            } catch (ServletException | SQLException e) {
+                e.printStackTrace();
             }
-        } catch (ServletException | SQLException e) {
-            e.printStackTrace();
+        } else {
+            System.out.println("User non definito");
         }
+
     }
+
     private String dammiNomeTabella(String personType) {
         switch (personType) {
             case "allievo":
@@ -115,7 +121,8 @@ public class ScuolaServlet extends HttpServlet {
                 return null;
         }
     }
-    private void inserimentoPersona(HttpServletRequest request, HttpServletResponse response)throws IOException {
+
+    private void inserimentoPersona(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String personType = request.getParameter("personType");
         String nomeTabella = dammiNomeTabella(personType);
 
@@ -129,7 +136,7 @@ public class ScuolaServlet extends HttpServlet {
         String dataNascita = request.getParameter("dataNascita"); // YYYY-MM-DD
         String email = request.getParameter("email");
         LocalDate date = LocalDate.parse(dataNascita);
-
+        //new obj persona abilitato è 1 by default in DB
         Persona persona = new Persona(codiceFiscale, nome, cognome, sesso, statoNascita, provinciaNascita, comuneNascita, date, email);
 
         String sqlInsert = "INSERT INTO " + nomeTabella + " (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('"
@@ -144,7 +151,7 @@ public class ScuolaServlet extends HttpServlet {
                 + persona.getEmail() + "')";
 
         boolean isInserted = mioDB.writeInDb(sqlInsert);
-
+        //stampo dati inseriti in browser come alert
         PrintWriter writer = response.getWriter();
         String welcomeUrl = request.getContextPath() + "/welcome.html";
         writer.println("<script>");
@@ -168,13 +175,13 @@ public class ScuolaServlet extends HttpServlet {
     }
 
     private Persona cercaPersonaPerCf(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
-        // String personType = request.getParameter("personType");
-        String cf = request.getParameter("cf");  // Assuming cf is passed as a URL parameter
+
+        String cf = request.getParameter("cf");  // cf passato come URL parameter
 
         String nomeTabella = dammiNomeTabella(personType);
         if (nomeTabella == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid person type.");
-            return null; // Return null indicating failure
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Tio di persona non valido");
+            return null;
         }
 
         String sqlQuery = "SELECT * FROM " + nomeTabella + " WHERE cf = '" + cf + "'";
@@ -194,7 +201,7 @@ public class ScuolaServlet extends HttpServlet {
                         resultSet.getString("email")
                 );
 
-                // Printing persona details as an alert message
+                // Print dettagli persona come alert
                 PrintWriter writer = response.getWriter();
                 writer.println("<script>");
                 writer.println("alert('Dettagli " + nomeTabella + ":\\n" +
@@ -210,19 +217,20 @@ public class ScuolaServlet extends HttpServlet {
                 writer.println("window.location.href = '" + welcomeUrl + "';");
                 writer.println("</script>");
 
-                return persona; // Return the fetched Persona object
+                return persona;
             } else {
-                // No persona found
+                //persona non trovata
                 PrintWriter writer = response.getWriter();
                 writer.println("<script>alert('Persona con CF " + cf + " non trovata!');");
                 writer.println("window.location.href = '" + welcomeUrl + "';");
                 writer.println("</script>");
-                return null; // Return null indicating failure
+                return null;
             }
         } catch (SQLException e) {
             throw new ServletException("Database error", e);
         }
     }
+
     private void stampaListaPersone(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
         ArrayList<Persona> persone = new ArrayList<>();
         int page = 1;
@@ -234,7 +242,7 @@ public class ScuolaServlet extends HttpServlet {
 
         String nomeTabella = dammiNomeTabella(personType);
         if (nomeTabella == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid person type.");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Tipo di persona non valido");
             return;
         }
 
@@ -258,7 +266,7 @@ public class ScuolaServlet extends HttpServlet {
                 persone.add(persona);
             }
         } catch (SQLException e) {
-            throw new ServletException("Database error", e);
+            System.out.println("Database error"+ e);
         }
 
         // Fetch the total number of records
@@ -274,7 +282,7 @@ public class ScuolaServlet extends HttpServlet {
         int totalPages = (int) Math.ceil(totalRecords * 1.0 / recordsPerPage);
 
         PrintWriter writer = response.getWriter();
-        String nomeTabellaPlurale=nomeTabella.substring(0,nomeTabella.length()-1)+"i";
+        String nomeTabellaPlurale = nomeTabella.substring(0, nomeTabella.length() - 1) + "i";
         writer.println("<html><head><title>Lista di " + nomeTabellaPlurale + "</title>");
         writer.println("<style>");
         writer.println("table { font-family: arial, sans-serif; border-collapse: collapse; width: 100%; margin-bottom: 20px; }");
@@ -329,13 +337,6 @@ public class ScuolaServlet extends HttpServlet {
 
         writer.println("</body></html>");
     }
-
-
-
-
-
-
-
 
 
 }
