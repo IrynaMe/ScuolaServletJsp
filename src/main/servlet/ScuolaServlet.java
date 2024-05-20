@@ -21,6 +21,8 @@ public class ScuolaServlet extends HttpServlet {
     private static final int RECORDS_PER_PAGE = 10;
     String usernameCorrente = null;
     String passwordCorrente = null;
+    PrintWriter writer;
+
 
     /**
      * this life-cycle method is invoked when this servlet is first accessed
@@ -43,10 +45,13 @@ public class ScuolaServlet extends HttpServlet {
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String action = request.getParameter("action");
         String personType = request.getParameter("personType");
+        String submitAction = request.getParameter("submitAction");
         try {
-            if ("cercaPersona".equals(action)) { //in inputCf.html
-                cercaPersonaPerCf(request, response, personType);
-            } else if ("stampaLista".equals(action)) {//in welcome.html
+            if ("cerca".equals(submitAction)) {
+                cercaPersonaPerCf(request, response, personType, true);
+            } else if ("cambiaStato".equals(submitAction)) {
+                cambiaStatoPersona(request, response, personType);
+            } else if ("stampaLista".equals(action)) {
                 stampaListaPersone(request, response, personType);
             } else {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
@@ -55,6 +60,8 @@ public class ScuolaServlet extends HttpServlet {
             System.out.println(e);
         }
     }
+
+
 
     /**
      * handles HTTP POST request
@@ -76,6 +83,7 @@ public class ScuolaServlet extends HttpServlet {
      */
     public void destroy() {
         System.out.println("Servlet is being destroyed");
+        writer.close();
         mioDB.disconnect();
     }
 
@@ -94,7 +102,7 @@ public class ScuolaServlet extends HttpServlet {
                     RequestDispatcher dispatcher = request.getRequestDispatcher("/welcome.html");
                     dispatcher.forward(request, response);
                 } else {
-                    PrintWriter writer = response.getWriter();
+                    writer = response.getWriter();
                     writer.println("<html><body><h2>Non trovo utente con " + usernameCorrente + " e password inserito!</h2>");
                     writer.println("<p>Utente NON autorizzato</p>");
                     writer.println("</body></html>");
@@ -110,21 +118,29 @@ public class ScuolaServlet extends HttpServlet {
     }
 
     private String dammiNomeTabella(String personType) {
+        String nomeTabellaPersona = null;
         switch (personType) {
-            case "allievo":
-                return "allievo";
-            case "docente":
-                return "docente";
             case "amministrativo":
-                return "amministrativo";
+                nomeTabellaPersona = "amministrativo";
+                break;
+            case "allievo":
+                nomeTabellaPersona = "allievo";
+                break;
+            case "docente":
+                nomeTabellaPersona = "docente";
+                break;
             default:
+                System.out.println("Tabella non definita");
                 return null;
         }
+        return nomeTabellaPersona;
     }
 
     private void inserimentoPersona(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String personType = request.getParameter("personType");
-        String nomeTabella = dammiNomeTabella(personType);
+
+        String nomeTabellaPersona = dammiNomeTabella(personType);
+
 
         String codiceFiscale = request.getParameter("codiceFiscale");
         String nome = request.getParameter("nome");
@@ -139,7 +155,7 @@ public class ScuolaServlet extends HttpServlet {
         //new obj persona abilitato è 1 by default in DB
         Persona persona = new Persona(codiceFiscale, nome, cognome, sesso, statoNascita, provinciaNascita, comuneNascita, date, email);
 
-        String sqlInsert = "INSERT INTO " + nomeTabella + " (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('"
+        String sqlInsert = "INSERT INTO " + nomeTabellaPersona + " (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('"
                 + persona.getCf() + "', '"
                 + persona.getNome() + "', '"
                 + persona.getCognome() + "', '"
@@ -151,12 +167,12 @@ public class ScuolaServlet extends HttpServlet {
                 + persona.getEmail() + "')";
 
         boolean isInserted = mioDB.writeInDb(sqlInsert);
+        response.setContentType("text/html");
         //stampo dati inseriti in browser come alert
-        PrintWriter writer = response.getWriter();
-        String welcomeUrl = request.getContextPath() + "/welcome.html";
+        writer = response.getWriter();
         writer.println("<script>");
         if (isInserted) {
-            writer.println("alert('Nuovo " + nomeTabella + " inserito con successo!\\n" +
+            writer.println("alert('Nuovo " + nomeTabellaPersona + " inserito con successo!\\n" +
                     "Codice Fiscale: " + codiceFiscale + "\\n" +
                     "Nome: " + nome + "\\n" +
                     "Cognome: " + cognome + "\\n" +
@@ -167,69 +183,14 @@ public class ScuolaServlet extends HttpServlet {
                     "Data di Nascita: " + dataNascita + "\\n" +
                     "Email: " + email + "');");
         } else {
-            writer.println("alert('Errore di inserimento di un nuovo " + nomeTabella + " in database!');");
+            writer.println("alert('Errore di inserimento di un nuovo " + nomeTabellaPersona + " in database!');");
         }
-        writer.println("window.location.href = '" + welcomeUrl + "';");
+
+        writer.println("window.location.href = '" + request.getContextPath() + "/welcome.html';");
         writer.println("</script>");
-        writer.close();
+        writer.flush();
     }
 
-    private Persona cercaPersonaPerCf(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
-
-        String cf = request.getParameter("cf");  // cf passato come URL parameter
-
-        String nomeTabella = dammiNomeTabella(personType);
-        if (nomeTabella == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Tio di persona non valido");
-            return null;
-        }
-
-        String sqlQuery = "SELECT * FROM " + nomeTabella + " WHERE cf = '" + cf + "'";
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            String welcomeUrl = request.getContextPath() + "/welcome.html";
-            if (resultSet.next()) {
-                // Fetching persona details
-                Persona persona = new Persona(
-                        resultSet.getString("cf"),
-                        resultSet.getString("nome"),
-                        resultSet.getString("cognome"),
-                        resultSet.getString("sesso"),
-                        resultSet.getString("stato_nascita"),
-                        resultSet.getString("provincia_nascita"),
-                        resultSet.getString("comune_nascita"),
-                        resultSet.getDate("data_nascita").toLocalDate(),
-                        resultSet.getString("email")
-                );
-
-                // Print dettagli persona come alert
-                PrintWriter writer = response.getWriter();
-                writer.println("<script>");
-                writer.println("alert('Dettagli " + nomeTabella + ":\\n" +
-                        "Codice Fiscale: " + persona.getCf() + "\\n" +
-                        "Nome: " + persona.getNome() + "\\n" +
-                        "Cognome: " + persona.getCognome() + "\\n" +
-                        "Sesso: " + persona.getSesso() + "\\n" +
-                        "Stato di Nascita: " + persona.getStatoNascita() + "\\n" +
-                        "Provincia di Nascita: " + persona.getProvinciaNascita() + "\\n" +
-                        "Comune di Nascita: " + persona.getComuneNascita() + "\\n" +
-                        "Data di Nascita: " + persona.getDataNascita() + "\\n" +
-                        "Email: " + persona.getEmail() + "');");
-                writer.println("window.location.href = '" + welcomeUrl + "';");
-                writer.println("</script>");
-
-                return persona;
-            } else {
-                //persona non trovata
-                PrintWriter writer = response.getWriter();
-                writer.println("<script>alert('Persona con CF " + cf + " non trovata!');");
-                writer.println("window.location.href = '" + welcomeUrl + "';");
-                writer.println("</script>");
-                return null;
-            }
-        } catch (SQLException e) {
-            throw new ServletException("Database error", e);
-        }
-    }
 
     private void stampaListaPersone(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
         ArrayList<Persona> persone = new ArrayList<>();
@@ -240,14 +201,16 @@ public class ScuolaServlet extends HttpServlet {
             page = Integer.parseInt(request.getParameter("page"));
         }
 
-        String nomeTabella = dammiNomeTabella(personType);
-        if (nomeTabella == null) {
+        String nomeTabellaPersona = dammiNomeTabella(personType);
+
+
+        if (nomeTabellaPersona == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Tipo di persona non valido");
             return;
         }
 
         int start = (page - 1) * recordsPerPage;
-        String sqlQuery = "SELECT SQL_CALC_FOUND_ROWS * FROM " + nomeTabella + " LIMIT " + start + ", " + recordsPerPage;
+        String sqlQuery = "SELECT SQL_CALC_FOUND_ROWS * FROM " + nomeTabellaPersona + " LIMIT " + start + ", " + recordsPerPage;
 
         try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
             while (resultSet.next()) {
@@ -266,7 +229,7 @@ public class ScuolaServlet extends HttpServlet {
                 persone.add(persona);
             }
         } catch (SQLException e) {
-            System.out.println("Database error"+ e);
+            System.out.println("Database error" + e);
         }
 
         // Fetch the total number of records
@@ -280,9 +243,9 @@ public class ScuolaServlet extends HttpServlet {
         }
 
         int totalPages = (int) Math.ceil(totalRecords * 1.0 / recordsPerPage);
-
-        PrintWriter writer = response.getWriter();
-        String nomeTabellaPlurale = nomeTabella.substring(0, nomeTabella.length() - 1) + "i";
+        response.setContentType("text/html");
+        writer = response.getWriter();
+        String nomeTabellaPlurale = nomeTabellaPersona.substring(0, nomeTabellaPersona.length() - 1) + "i";
         writer.println("<html><head><title>Lista di " + nomeTabellaPlurale + "</title>");
         writer.println("<style>");
         writer.println("table { font-family: arial, sans-serif; border-collapse: collapse; width: 100%; margin-bottom: 20px; }");
@@ -336,7 +299,104 @@ public class ScuolaServlet extends HttpServlet {
         writer.println("</div>");
 
         writer.println("</body></html>");
+        writer.flush();
     }
+
+    private Persona cercaPersonaPerCf(HttpServletRequest request, HttpServletResponse response, String personType, boolean isRedirectNeeded) throws IOException, ServletException {
+        String cf = request.getParameter("cf");
+
+        String nomeTabellaPersona = dammiNomeTabella(personType);
+
+        Persona persona = null;
+        if (nomeTabellaPersona == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Tipo di persona non valido");
+            return null;
+        }
+        String sqlQuery = "SELECT * FROM " + nomeTabellaPersona + " WHERE cf = '" + cf + "'";
+        response.setContentType("text/html");
+        writer = response.getWriter();
+        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+            if (resultSet.next()) {
+                // Fetching persona details
+                persona = new Persona(
+                        resultSet.getString("cf"),
+                        resultSet.getString("nome"),
+                        resultSet.getString("cognome"),
+                        resultSet.getString("sesso"),
+                        resultSet.getString("stato_nascita"),
+                        resultSet.getString("provincia_nascita"),
+                        resultSet.getString("comune_nascita"),
+                        resultSet.getDate("data_nascita").toLocalDate(),
+                        resultSet.getString("email"),
+                        resultSet.getInt("abilitato")
+                );
+
+                // Print dettagli persona come alert
+                writer.println("<script>");
+                writer.println("alert('Dettagli " + nomeTabellaPersona + ":\\n" +
+                        "Codice Fiscale: " + persona.getCf() + "\\n" +
+                        "Nome: " + persona.getNome() + "\\n" +
+                        "Cognome: " + persona.getCognome() + "\\n" +
+                        "Sesso: " + persona.getSesso() + "\\n" +
+                        "Stato di Nascita: " + persona.getStatoNascita() + "\\n" +
+                        "Provincia di Nascita: " + persona.getProvinciaNascita() + "\\n" +
+                        "Comune di Nascita: " + persona.getComuneNascita() + "\\n" +
+                        "Data di Nascita: " + persona.getDataNascita() + "\\n" +
+                        "Email: " + persona.getEmail() + "\\n" +
+                        "Abilitato: " + persona.getAbilitato() + "');");
+                if (isRedirectNeeded) {
+                    writer.println("window.location.href = '" + request.getContextPath() + "/welcome.html';");
+                }
+                writer.println("</script>");
+            } else {
+                // Persona non trovata
+                writer.println("<script>");
+                writer.println("alert('Persona con CF " + cf + " non trovata!');");
+                if (isRedirectNeeded) {
+                    writer.println("window.location.href = '" + request.getContextPath() + "/welcome.html';");
+                }
+                writer.println("</script>");
+
+            }
+        } catch (SQLException e) {
+            throw new ServletException("Database error", e);
+        }
+        writer.flush();
+        return persona;
+    }
+
+    private void cambiaStatoPersona(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
+        String nomeTabellaPersona = dammiNomeTabella(personType);
+
+        Persona persona = cercaPersonaPerCf(request, response, personType, false);
+        response.setContentType("text/html;charset=UTF-8");
+        writer = response.getWriter();
+
+        if (persona != null) {
+            int nuovoStato = (persona.getAbilitato() == 0) ? 1 : 0;
+
+            String sqlQuery = "UPDATE " + nomeTabellaPersona + " SET abilitato = " + nuovoStato + " WHERE cf = '" + persona.getCf() + "'";
+            boolean isUpdated = mioDB.writeInDb(sqlQuery);
+
+            writer.println("<script>");
+            if (isUpdated) {
+                writer.println("alert('Stato di " + nomeTabellaPersona + " è cambiato:\\n" +
+                        "Stato impostato: " + nuovoStato + "');");
+            } else {
+                writer.println("alert('Errore nel cambiare lo stato della persona.');");
+            }
+            writer.println("window.location.href = '" + request.getContextPath() + "/welcome.html';");
+            writer.println("</script>");
+            writer.flush();
+        } else {
+            writer.println("<script>");
+            writer.println("alert('Errore nel cambiare lo stato della persona.');");
+            writer.println("window.location.href = '" + request.getContextPath() + "/welcome.html';");
+            writer.println("</script>");
+            writer.flush();
+        }
+    }
+
 
 
 }

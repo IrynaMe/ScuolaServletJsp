@@ -16,16 +16,17 @@
             <input type="text" class="form-control" id="cfInput" name="cf" placeholder="Inserisci il codice fiscale">
         </div>
         <!-- Hidden input field to pass personType -->
-        <input type="hidden" id="personTypeInput" name="personType">
+        <input type="hidden" id="personTypeInput" name="personType" value="allievo">
         <!-- Hidden input field to specify the action -->
         <input type="hidden" name="action" value="cercaPersona">
-        <button type="submit" class="btn btn-primary">Cerca</button>
-
+        <button type="submit" class="btn btn-primary" name="submitAction" value="cerca">Cerca</button>
+        <button type="submit" class="btn btn-primary" name="submitAction" value="cambiaStato">Cambia stato</button>
     </form>
     <!-- Back button form -->
     <form id="backForm" action="ScuolaServlet" method="post">
         <input type="hidden" name="formType" value="login">
     </form>
+
 </br>
     <!-- Back button -->
     <div class="back-button">
