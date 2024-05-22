@@ -42,6 +42,13 @@ public class Persona {
 		this.abilitato = abilitato;
 	}
 
+	public Persona(String cf, String nome, String cognome, String email) {
+		this.cf = cf;
+		this.nome = nome;
+		this.cognome = cognome;
+		this.email = email;
+	}
+
 	public String getCf() {
 		return cf;
 	}
