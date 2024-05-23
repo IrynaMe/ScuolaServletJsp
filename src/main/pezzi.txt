@@ -1,0 +1,60 @@
+
+      <%
+          String menuOption1 = "";
+          String menuOption2 = "";
+          String menuOption3 = "";
+
+          // Determine menu options based on currentProfile
+          if ("amministrativo".equals(currentProfile)) {
+              menuOption1 = "Aggiungi Allievo";
+              menuOption2= "Cerca Allievo";
+              menuOption3 = "Cerca/Cambia stato Allievo";
+              menuOption4 = "Stampa lista di tutti Allievi";
+              menuOption5 = "Stampa Allievi di una classe";
+              menuOption6 = "Aggiungi Docente";
+              menuOption7= "Cerca Docente";
+              menuOption8 = "Cerca/Cambia stato Docente";
+              menuOption9 = "Stampa lista Docenti";
+              menuOption10 = "Aggiungi Amministrativo";
+              menuOption11 = "Cerca/Cambia stato Amministrativo";
+              menuOption12 = "Stampa lista Amministrativi";
+          } else if ("docente".equals(currentProfile)) {
+              menuOption1 = "Cerca Allievo";
+              menuOption2 = "Stampa lista di tutti Allievi";
+              menuOption3 = "Stampa allievi di una classe";
+              menuOption4 = "Cerca Docente";
+              menuOption5 = "Stampa lista di tutti Docenti";
+              menuOption6 = "Stampa Allievi di una classe";
+          } else if ("allievo".equals(currentProfile)) {
+              menuOption1 = "Cerca Allievo";
+              menuOption2 = "Stampa lista di tutti Allievi";
+              menuOption3 = "Stampa allievi di una classe";
+          }
+      %>
+
+      ...
+
+      <!-- Dynamic menu options based on currentProfile -->
+      <a class="dropdown-item" href="inserimentoPersona.html?personType=allievo"><%= menuOption1 %></a>
+      <a class="dropdown-item" href="inputCf.html?personType=allievo"><%= menuOption2 %></a>
+      <a class="dropdown-item" href="ScuolaServlet?action=stampaLista&personType=allievo"><%= menuOption3 %></a>
+
+
+        ********************** stampaClasse vecchio ************************
+
+          private void stampaClasse(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+                ArrayList<Persona> miaListaAllievi = new ArrayList<>();
+                miaListaAllievi.add(new Persona("ABCDEF12G34H567I", "Maria", "Rossi", "F", "Italia", "Roma", "Roma", LocalDate.of(2000, 5, 15), "maria.rossi@example.com", 1));
+                miaListaAllievi.add(new Persona("GHIJKL34M56N789O", "Giulia", "Bianchi", "F", "Italia", "Milano", "Milano", LocalDate.of(2001, 8, 22), "giulia.bianchi@example.com", 1));
+                miaListaAllievi.add(new Persona("PQRSTUV56W78X901Y", "Luca", "Verdi", "M", "Italia", "Napoli", "Napoli", LocalDate.of(1999, 12, 5), "luca.verdi@example.com", 1));
+                miaListaAllievi.add(new Persona("WXYZAB78C90D123EF", "Marco", "Gallo", "M", "Italia", "Torino", "Torino", LocalDate.of(2000, 10, 10), "marco.gallo@example.com", 1));
+                miaListaAllievi.add(new Persona("EFGHIJ90K12L345MN", "Chiara", "Romano", "F", "Italia", "Firenze", "Firenze", LocalDate.of(2001, 3, 8), "chiara.romano@example.com", 1));
+
+                //condivido l'arraylist con paggina jsp
+                request.setAttribute("listaAllievi", miaListaAllievi);
+                request.setAttribute("nomeClasse", "I sezione A");
+                System.out.println("Richiamata visualizzazione classe");
+                sendHtmlPage("classeIA.jsp", request, response);
+
+            }
+            *****************************************************

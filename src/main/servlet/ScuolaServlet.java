@@ -20,6 +20,7 @@ public class ScuolaServlet extends HttpServlet {
     private ManageDb mioDB;
     //   private static final int RECORDS_PER_PAGE = 10;
     String usernameCorrente;
+    Integer userProfile;
     // String passwordCorrente = null;
     PrintWriter writer;
     boolean isConnected;
@@ -34,8 +35,8 @@ public class ScuolaServlet extends HttpServlet {
         System.out.println("Servlet is being initialized");
         mioDB = new ManageDb();
         usernameCorrente = null;
-        isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
-       // isConnected = mioDB.Connect("localhost", 3306, "gestione_scuola", "user_scuola", "scuola123");
+         isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        //isConnected = mioDB.Connect("localhost", 3306, "gestione_scuola", "user_scuola", "scuola123");
         if (isConnected) {
             System.out.println("********** Connessione al DB avvenuta correttamente ***********");
         } else {
@@ -55,15 +56,22 @@ public class ScuolaServlet extends HttpServlet {
         String submitAction = request.getParameter("submitAction");
 
         try {
-            if ("cerca".equals(submitAction)) {
+            if ("logout".equals(action)) {
+                logout(request, response);
+            } else if ("cerca".equals(submitAction)) {
+                //form da inserire cf->new action button cerca->mostra persona con alert
                 cercaPersonaPerCf(request, response, personType, true);
             } else if ("cambiaStato".equals(submitAction)) {
+                //form da inserire cf->new action button cambia stato->cambia stato in db+alert
                 cambiaStatoPersona(request, response, personType);
             } else if ("stampaLista".equals(action)) {
+                //stampa tabella con dati di persone con writer.println
                 stampaListaPersone(request, response, personType);
             } else if ("scegliClasse".equals(action)) {
+                //prepare select ->form InputClasseSezione
                 cercaClasse(request, response);
             } else if ("stampaClasse".equals(action)) {
+                //pagina stampaClasse con dati di allievo con parametri da frorm InputClasseSezione
                 stampaAllieviDiClasse(request, response);
             } else {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
@@ -99,65 +107,72 @@ public class ScuolaServlet extends HttpServlet {
         mioDB.disconnect();
     }
 
+    private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+      //  response.sendRedirect("index.html");
+        sendHtmlPage("index.html", request, response);
 
+    }
     private void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ResultSet resultSet = null;
-        HttpSession session = request.getSession(false); // prendo sessione se esiste o creo nuova se no
+
+        HttpSession session = request.getSession(false); // prendo session se gia esiste, else null
 
         if (session == null) {
-            session = request.getSession(); // Creo nuova sessione
-        }else{
-            sendHtmlPage("welcome.jsp", request, response);
+            session = request.getSession(); // Creo nuova session
+        } else {
+            // controllo se user gia logged in prima
+            if (session.getAttribute("currentUser") != null) {
+                sendHtmlPage("welcome.jsp", request, response);
+                return; // esco dal method
+            }
         }
 
-        String passwordCorrente = null;
-        if (isConnected) {
-            usernameCorrente = request.getParameter("username");
-            passwordCorrente = request.getParameter("password");
+        String usernameCorrente = request.getParameter("username");
+        String passwordCorrente = request.getParameter("password");
 
-            if (usernameCorrente != null && passwordCorrente != null) {
+
+        if (usernameCorrente != null && passwordCorrente != null) {
+            if (isConnected) {
                 try {
                     String sqlQuery = "SELECT * FROM utente WHERE username='" + usernameCorrente + "' AND password='" + passwordCorrente + "' AND abilitato=1";
                     resultSet = mioDB.readInDb(sqlQuery);
                     if (resultSet.next()) {
                         usernameCorrente = resultSet.getString("username");
+                        userProfile = resultSet.getInt("profilo");
 
                         session.setAttribute("currentUser", usernameCorrente); // Set session attribute
+                        session.setAttribute("currentProfile", userProfile);
                         request.setAttribute("currentUser", usernameCorrente);
                         sendHtmlPage("welcome.jsp", request, response);
                     } else {
-                        writer = response.getWriter();
+                        PrintWriter writer = response.getWriter();
                         writer.println("<script>");
                         writer.println("alert('Utente con username e password inseriti NON TROVATO');");
-                        // writer.println("window.location.href = '" + request.getContextPath() + "/index.html';");
                         writer.println("</script>");
                         writer.flush();
-                        request.setAttribute("currentUser", usernameCorrente);
                         sendHtmlPage("index.html", request, response);
                     }
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
             } else {
-                writer = response.getWriter();
-                // writer.println("<html><body><h2>Username o password non sono iseriti</h2></body></html>");
+                PrintWriter writer = response.getWriter();
                 writer.println("<script>");
-                writer.println("alert('Non hai inserito username o/e password.Riprova');");
-                // writer.println("window.location.href = '" + request.getContextPath() + "/index.html';");
+                writer.println("alert('Problema di connessione con Database!');");
                 writer.println("</script>");
                 writer.flush();
-                usernameCorrente = null;
                 sendHtmlPage("index.html", request, response);
             }
         } else {
-            writer = response.getWriter();
-            // writer.println("<html><body><h2>Connessione con DB fallita</h2></body></html>");
+            PrintWriter writer = response.getWriter();
             writer.println("<script>");
-            writer.println("alert('!Problema di connessione con Database!');");
-            // writer.println("window.location.href = '" + request.getContextPath() + "/index.html';");
+            writer.println("alert('Non hai inserito username o/e password. Riprova');");
             writer.println("</script>");
             writer.flush();
-            usernameCorrente = null;
             sendHtmlPage("index.html", request, response);
         }
     }
@@ -233,7 +248,7 @@ public class ScuolaServlet extends HttpServlet {
             writer.println("alert('Errore di inserimento di un nuovo " + nomeTabellaPersona + " in database!');");
         }
 
-       // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+        // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
         writer.println("</script>");
         writer.flush();
         sendHtmlPage("welcome.jsp", request, response);
@@ -312,6 +327,7 @@ public class ScuolaServlet extends HttpServlet {
         writer.flush();
     }
 
+    //per preparare il form InputclasseSezione
     private void cercaClasse(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         // Preparo anni scolastici esistenti nella DB
         ArrayList<String> anniScolastici = dammiAnniScolastici();
@@ -327,6 +343,7 @@ public class ScuolaServlet extends HttpServlet {
         sendHtmlPage("InputClasseSezione.jsp", request, response);
     }
 
+    //da chiamare in cercaClasse
     private ArrayList<String> dammiAnniScolastici() {
         ArrayList<String> anniScolastici = new ArrayList<>();
         String sqlQuery = "SELECT DISTINCT anno_scolastico FROM allievo_in_classe";
@@ -341,6 +358,7 @@ public class ScuolaServlet extends HttpServlet {
         return anniScolastici;
     }
 
+    //da chiamare in cercaClasse
     private ArrayList<Integer> dammiLivello() {
         ArrayList<Integer> livelli = new ArrayList<>();
         String sqlQuery = "SELECT DISTINCT livello_classe FROM allievo_in_classe";
@@ -355,6 +373,7 @@ public class ScuolaServlet extends HttpServlet {
         return livelli;
     }
 
+    //da chiamare in cercaClasse
     private ArrayList<String> dammiSezione() {
         ArrayList<String> sezioni = new ArrayList<>();
         String sqlQuery = "SELECT DISTINCT sezione_classe FROM allievo_in_classe";
@@ -372,7 +391,7 @@ public class ScuolaServlet extends HttpServlet {
     private void stampaAllieviDiClasse(HttpServletRequest request, HttpServletResponse response) {
         ArrayList<Persona> miaListaAllievi = new ArrayList<>();
 
-      Persona allievo = null;
+        Persona allievo = null;
         String annoScolastico = request.getParameter("annoScolastico");
         Integer livello = Integer.parseInt(request.getParameter("livello"));
         String sezione = request.getParameter("sezione");
@@ -400,14 +419,10 @@ public class ScuolaServlet extends HttpServlet {
 
         //condivido l'arraylist con paggina jsp
         request.setAttribute("listaAllievi", miaListaAllievi);
-        for(Persona allievo1:miaListaAllievi){
-            System.out.println(allievo1.toString());
-        }
         request.setAttribute("annoScolastico", annoScolastico);
         request.setAttribute("livello", livello.toString());
         request.setAttribute("sezione", sezione);
         sendHtmlPage("stampaClasse.jsp", request, response);
-
     }
 
     private void sendHtmlPage(String sNomePagina, HttpServletRequest request, HttpServletResponse response) {
@@ -469,24 +484,28 @@ public class ScuolaServlet extends HttpServlet {
                         "Email: " + persona.getEmail() + "\\n" +
                         "Abilitato: " + persona.getAbilitato() + "');");
                 writer.println("</script>");
+                writer.flush();
                 if (isRedirectNeeded) {
                     //se solo sercare persona per cf
                     sendHtmlPage("welcome.jsp", request, response);
+                    return persona;
                 }
             } else {
                 // Persona non trovata
                 writer.println("<script>");
                 writer.println("alert('Persona con CF " + cf + " non trovata!');");
                 writer.println("</script>");
+                writer.flush();
                 if (isRedirectNeeded) {
                     sendHtmlPage("welcome.jsp", request, response);
-                   // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+                    return null;
+                    // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
                 }
             }
         } catch (SQLException e) {
             throw new ServletException("Database error", e);
         }
-        writer.flush();
+        // writer.flush();
         return persona;
     }
 
@@ -510,7 +529,7 @@ public class ScuolaServlet extends HttpServlet {
             } else {
                 writer.println("alert('Errore nel cambiare lo stato della persona.');");
             }
-          //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+            //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
             writer.println("</script>");
             writer.flush();
             sendHtmlPage("welcome.jsp", request, response);
@@ -518,7 +537,7 @@ public class ScuolaServlet extends HttpServlet {
         } else {
             writer.println("<script>");
             writer.println("alert('Errore nel cambiare lo stato della persona.');");
-          //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+            //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
             writer.println("</script>");
             writer.flush();
             sendHtmlPage("welcome.jsp", request, response);
