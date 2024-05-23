@@ -1,3 +1,4 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +9,20 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+<%
+    String currentUser = (String) session.getAttribute("currentUser");
+    Integer userProfile = (Integer) session.getAttribute("currentProfile");
+    String currentProfile = null;
+    if (userProfile != null) {
+        switch (userProfile) {
+            case 1: currentProfile = "amministrativo"; break;
+            case 2: currentProfile = "docente"; break;
+            case 3: currentProfile = "allievo"; break;
+            default: currentProfile = "unknown";
+        }
+    }
+%>
+
 <div class="container mt-5">
     <h2>Inserisci il Codice Fiscale</h2>
     <form action="ScuolaServlet" method="GET">
@@ -20,14 +35,19 @@
         <!-- Hidden input field to specify the action -->
         <input type="hidden" name="action" value="cercaPersona">
         <button type="submit" class="btn btn-primary" name="submitAction" value="cerca">Cerca</button>
+
+        <!-- Button cambia stato solo per amministratore -->
+        <% if(currentProfile.equals("amministrativo")) { %>
         <button type="submit" class="btn btn-primary" name="submitAction" value="cambiaStato">Cambia stato</button>
+        <% } %>
+
     </form>
     <!-- Back button form -->
     <form id="backForm" action="ScuolaServlet" method="post">
         <input type="hidden" name="formType" value="login">
     </form>
 
-    </br>
+    <br>
     <!-- Back button -->
     <div class="back-button">
         <button onclick="submitBackForm()" class="btn btn-secondary">Torna al Menu</button>
@@ -58,4 +78,3 @@
 </script>
 </body>
 </html>
-

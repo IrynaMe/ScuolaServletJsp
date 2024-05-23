@@ -19,7 +19,7 @@
     <div class="container">
         <div class="row">
             <div class="col-12 mt-3">
-                <%-- Java code to get current date and user profile --%>
+
                 <%
                     java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
                     String sCurrentDate = sdf.format(new java.util.Date());

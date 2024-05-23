@@ -7,15 +7,15 @@ public class GestioneMenu {
 
     //opzioni con allievo
     OpzioneMenu opzioneMenu1 = new OpzioneMenu("Aggiungi Allievo", "inserimentoPersona.html?personType=allievo","Operazioni con allievo");
-    OpzioneMenu opzioneMenu2 = new OpzioneMenu("Cerca Allievo", "inputCf.html?personType=allievo","Operazioni con allievo");
-    OpzioneMenu opzioneMenu3 = new OpzioneMenu("Cerca/Cambia stato Allievo", "inputCf.html?personType=allievo","Operazioni con allievo");
+    OpzioneMenu opzioneMenu2 = new OpzioneMenu("Cerca Allievo", "inputCf.jsp?personType=allievo","Operazioni con allievo");
+    OpzioneMenu opzioneMenu3 = new OpzioneMenu("Cerca/Cambia stato Allievo", "inputCf.jsp?personType=allievo","Operazioni con allievo");
     OpzioneMenu opzioneMenu4 = new OpzioneMenu("Stampa lista di tutti Allievi", "ScuolaServlet?action=stampaLista&personType=allievo","Operazioni con allievo");
     OpzioneMenu opzioneMenu5 = new OpzioneMenu("Stampa Allievi di una classe", "ScuolaServlet?method=get&action=scegliClasse","Operazioni con allievo");
 
     //opzioni con docente
     OpzioneMenu opzioneMenu6 = new OpzioneMenu("Aggiungi Docente", "inserimentoPersona.html?personType=docente","Operazioni con docente");
     OpzioneMenu opzioneMenu7 = new OpzioneMenu("Cerca Docente", "inserimentoPersona.html?personType=docente","Operazioni con docente");
-    OpzioneMenu opzioneMenu8 = new OpzioneMenu("Cerca/Cambia stato Docente", "inputCf.html?personType=docente","Operazioni con docente");
+    OpzioneMenu opzioneMenu8 = new OpzioneMenu("Cerca/Cambia stato Docente", "inputCf.jsp?personType=docente","Operazioni con docente");
     OpzioneMenu opzioneMenu9 = new OpzioneMenu("Stampa lista Docenti", "ScuolaServlet?action=stampaLista&personType=docente","Operazioni con docente");
 
     //opzioni con amministrativo
