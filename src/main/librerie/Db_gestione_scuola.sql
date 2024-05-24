@@ -301,7 +301,16 @@ CREATE TABLE `utente` (
   `password` varchar(255) NOT NULL,
   `abilitato` int(1) NOT NULL DEFAULT '1',
   `profilo` int(1) NOT NULL DEFAULT '3',
-  PRIMARY KEY (`username`)
+  `cf_allievo` char(16) DEFAULT NULL,
+  `cf_docente` char(16) DEFAULT NULL,
+  `cf_amministrativo` char(16) DEFAULT NULL,
+  PRIMARY KEY (`username`),
+  KEY `cf_allievo` (`cf_allievo`),
+  KEY `cf_docente` (`cf_docente`),
+  KEY `cf_amministrativo` (`cf_amministrativo`),
+  CONSTRAINT `utente_ibfk_1` FOREIGN KEY (`cf_allievo`) REFERENCES `allievo` (`cf`),
+  CONSTRAINT `utente_ibfk_2` FOREIGN KEY (`cf_docente`) REFERENCES `docente` (`cf`),
+  CONSTRAINT `utente_ibfk_3` FOREIGN KEY (`cf_amministrativo`) REFERENCES `amministrativo` (`cf`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -311,9 +320,57 @@ CREATE TABLE `utente` (
 
 LOCK TABLES `utente` WRITE;
 /*!40000 ALTER TABLE `utente` DISABLE KEYS */;
-INSERT INTO `utente` VALUES ('admin','admin123',1,1),('docente','docente123',1,2),('studente','studente123',1,3),('user1','pass1',1,1),('user2','pass2',1,2),('user3','pass3',1,3);
+INSERT INTO `utente` VALUES ('user1','pass1',1,1,NULL,NULL,'ADDDDD33D33D333A'),('user2','pass2',1,2,NULL,'DDDDDD22D22D222D',NULL),('user3','pass3',1,3,'AAAAAA11A11A111A',NULL,NULL);
 /*!40000 ALTER TABLE `utente` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER ```check_profilo_range``` BEFORE INSERT ON `utente` FOR EACH ROW BEGIN
+    IF NEW.profilo < 1 OR NEW.profilo > 3 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'The profilo value must be between 1 and 3';
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `cf_utente_not_null` BEFORE INSERT ON `utente` FOR EACH ROW BEGIN
+    IF NEW.profilo = 1 THEN
+        IF NEW.cf_amministrativo IS NULL THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'cf_amministrativo must be set';
+        END IF;
+    ELSEIF NEW.profilo = 2 THEN
+        IF NEW.cf_docente IS NULL THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'For profilo 2, cf_docente must be set';
+        END IF;
+    ELSEIF NEW.profilo = 3 THEN
+        IF NEW.cf_allievo IS NULL THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'For profilo 3, cf_allievo must be set';
+        END IF;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 
 --
 -- Dumping routines for database 'gestione_scuola'
@@ -328,4 +385,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-05-23 20:04:55
+-- Dump completed on 2024-05-24 20:25:18
