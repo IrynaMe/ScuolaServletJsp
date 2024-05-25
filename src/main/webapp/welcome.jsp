@@ -2,7 +2,6 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.*" %>
-
 <%@ page import="main.menu.GestioneMenu" %>
 <%@ page import="main.menu.OpzioneMenu" %>
 
@@ -14,12 +13,29 @@
     <title>Navbar Example</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Full-height background image */
+        body {
+            background: url('pics/books.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .content-container {
+            background: rgba(255, 255, 255, 0.8); /* White background with transparency */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container content-container">
         <div class="row">
             <div class="col-12 mt-3">
-
                 <%
                     java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
                     String sCurrentDate = sdf.format(new java.util.Date());
@@ -45,12 +61,9 @@
                     Set<String> sectionsAllievo= gestioneMenu.getSectionsAllievo();
                 %>
                 <div class='alert alert-info' role='alert'>
-                    Data di oggi: <%= sCurrentDate %>
+                    Data di oggi: <%= sCurrentDate %>  |    Utente corrente: <%= currentUser %>  |   Profilo: <%= currentProfile %>
                 </div>
-                <div class='alert alert-info' role='alert'>
-                    Utente corrente: <%= currentUser %>
-                    Profilo: <%= currentProfile %>
-                </div>
+
             </div>
         </div>
         <div class="row">
@@ -121,9 +134,11 @@
             </nav>
         </div>
     </div>
+
     <!-- Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 </body>
 </html>
+
