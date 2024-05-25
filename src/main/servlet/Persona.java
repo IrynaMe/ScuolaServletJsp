@@ -139,7 +139,7 @@ public class Persona {
 
 	@Override
 	public String toString() {
-		return  entita +": "+
+		return
 				"codice fiscale='" + cf + '\'' +
 				", nome='" + nome + '\'' +
 				", cognome='" + cognome + '\'' +
