@@ -177,7 +177,23 @@ public class ScuolaServlet extends HttpServlet {
         }
     }
 
+    private void inserimentoProva(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
+    }
+    //da chiamare in inserimentoProva
+    private ArrayList<Integer> dammiMateria() {
+        ArrayList<Integer> livelli = new ArrayList<>();
+        String sqlQuery = "SELECT DISTINCT materia FROM allievo_in_classe";
+
+        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+            while (resultSet.next()) {
+                livelli.add(resultSet.getInt("livello_classe"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e);
+        }
+        return livelli;
+    }
     private String dammiNomeTabella(String personType) {
         String nomeTabellaPersona = null;
         switch (personType) {
@@ -373,6 +389,7 @@ public class ScuolaServlet extends HttpServlet {
         return livelli;
     }
 
+
     //da chiamare in cercaClasse
     private ArrayList<String> dammiSezione() {
         ArrayList<String> sezioni = new ArrayList<>();
@@ -508,7 +525,7 @@ public class ScuolaServlet extends HttpServlet {
         // writer.flush();
         return persona;
     }
-
+    //attivare-disattivare persona
     private void cambiaStatoPersona(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
         String nomeTabellaPersona = dammiNomeTabella(personType);
 
@@ -543,5 +560,6 @@ public class ScuolaServlet extends HttpServlet {
             sendHtmlPage("welcome.jsp", request, response);
         }
     }
+
 
 }
