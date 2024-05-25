@@ -10,6 +10,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -124,7 +126,7 @@ public class ScuolaServlet extends HttpServlet {
         ArrayList<String> materie = new ArrayList<>();
 
         String sqlQuery = "SELECT DISTINCT nome_materia FROM docente_classe WHERE cf_docente='" + cfUser + "'";
-
+        System.out.println(sqlQuery);
         try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
             while (resultSet.next()) {
                 materie.add(resultSet.getString("nome_materia"));
@@ -136,6 +138,7 @@ public class ScuolaServlet extends HttpServlet {
 
         // Condivido l'arraylist con pagina JSP
         request.setAttribute("listaMaterie", materie);
+
         // mando alla paggina
        String nextPage = "inputProva.jsp?step=materiaSelect";
       sendHtmlPage(nextPage, request, response);
@@ -280,13 +283,14 @@ public class ScuolaServlet extends HttpServlet {
         materiaScelta=request.getParameter("materia");
        // String selectedMateria =  (String) session.getAttribute("materiaScelta");
 
-        ArrayList<Persona> allievi = new ArrayList<>();
-        String sqlQuery = "SELECT DISTINCT allievo.nome, allievo.cognome, allievo.cf,allievo.email " +
-                "FROM allievo, docente_classe, allievo_in_classe " +
-                "WHERE docente_classe.cf_docente='" + cfUser + "' " +
-                "AND docente_classe.livello_classe = allievo_in_classe.livello_classe " +
+       Map<Persona,String> allieviInClasse=new HashMap<>();
+
+        String sqlQuery="SELECT DISTINCT allievo.nome, allievo.cognome, allievo.cf, allievo.email, allievo_in_classe.livello_classe,allievo_in_classe.sezione_classe " +
+                "FROM allievo INNER JOIN allievo_in_classe ON allievo.cf = allievo_in_classe.cf_allievo " +
+                "INNER JOIN docente_classe ON docente_classe.livello_classe = allievo_in_classe.livello_classe " +
                 "AND docente_classe.sezione_classe = allievo_in_classe.sezione_classe " +
-                "AND docente_classe.nome_materia = '" + materiaScelta + "'";
+                "WHERE docente_classe.cf_docente = '"+cfUser+"' AND docente_classe.nome_materia = '"+materiaScelta+"'";
+
         System.out.println("query allievo in classe:"+sqlQuery);
 
         try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
@@ -297,15 +301,16 @@ public class ScuolaServlet extends HttpServlet {
                         resultSet.getString("cognome"),
                         resultSet.getString("email")
                 );
-                allievi.add(allievo);
+                String classeSezione=resultSet.getString("livello_classe")+resultSet.getString("sezione_classe");
+                allieviInClasse.put(allievo,classeSezione);
+
             }
         } catch (SQLException e) {
             System.out.println("Database error: " + e);
         }
 
         // Condivido l'arraylist con pagina JSP
-        request.setAttribute("listaAllieviInClasse", allievi);
-
+        request.setAttribute("mappaAllieviInClasse",allieviInClasse);
 
         // mando alla paggina
         String nextPage = "inputProva.jsp?step=allievoSelect";

@@ -44,7 +44,7 @@ CREATE TABLE `allievo` (
 
 LOCK TABLES `allievo` WRITE;
 /*!40000 ALTER TABLE `allievo` DISABLE KEYS */;
-INSERT INTO `allievo` VALUES ('AAAAAA11A11A111A','Mario','Rossi','m','Italia','Roma','Roma','2009-01-01','mariorossi@gmail.com',0),('AADDDD55D55D555D','Marta','Lamponi','f','Italia','Roma','Roma','2011-04-18','martalamp@gmail.com',1),('ADDDDD31D33D313A','Sabrina','Caffetti','f','Italia','Roma','Roma','2011-05-06','sabricaffe@gmail.com',1),('ADDDDD44D44D444A','Alessandra','Spagghetti','f','Italia','Roma','Roma','2008-12-31','alessandraspag@gmail.com',1),('ADDDDD55D33D333A','Barbara','Burbone','f','Italia','Roma','Roma','2005-10-18','barbarbara@gmail.com',1),('DADDDD55D55D555D','Sofia','Santi','f','Italia','Roma','Roma','2004-05-30','sofiasanti@gmail.com',1),('DDDDDD55D55D555S','Roberto','Zampetti','m','Italia','Roma','Roma','2004-10-27','roberzampet@gmail.com',0),('NDDDDD55D55D555D','Mia','Zucchetti','f','Italia','Roma','Roma','2010-05-25','miazu@gmail.com',1),('SDDDDD55D55D555D','Paolo','Salvi','f','Italia','Roma','Roma','2006-02-03','paolosalvi@gmail.com',1),('ZDDDDD55D55D555D','Mauro','Cuoco','f','Italia','Roma','Roma','2006-12-12','maurocuoco@gmail.com',0),('ZZZZZZ11Z11Z111Q','Sergio','Bottone','m','Italia','Roma','Roma','2007-06-06','srgiobottone@gmail.com',1);
+INSERT INTO `allievo` VALUES ('AAAAAA11A11A111A','Mario','Rossi','m','Italia','Roma','Roma','2009-01-01','mariorossi@gmail.com',0),('AADDDD55D55D555D','Marta','Lamponi','f','Italia','Roma','Roma','2011-04-18','martalamp@gmail.com',1),('ADDDDD31D33D313A','Sabrina','Caffetti','f','Italia','Roma','Roma','2011-05-06','sabricaffe@gmail.com',1),('ADDDDD44D44D444A','Alessandra','Spagghetti','f','Italia','Roma','Roma','2008-12-31','alessandraspag@gmail.com',1),('ADDDDD55D33D333A','Barbara','Burbone','f','Italia','Roma','Roma','2005-10-18','barbarbara@gmail.com',1),('ALDDDD00D33D333A','Katia','Broccoli','f','Italia','Roma','Roma','2008-10-29','katbr@gmail.com',1),('ALDDDD01D33D333A','Fabrizio','Pizzatti','m','Italia','Roma','Roma','2012-02-12','fabpiz@gmail.com',1),('ALDDDD02D44D444D','Massimiliano','Martini','m','Italia','Roma','Roma','2007-02-07','massmart@gmail.com',1),('DADDDD55D55D555D','Sofia','Santi','f','Italia','Roma','Roma','2004-05-30','sofiasanti@gmail.com',1),('DDDDDD55D55D555S','Roberto','Zampetti','m','Italia','Roma','Roma','2004-10-27','roberzampet@gmail.com',0),('NDDDDD55D55D555D','Mia','Zucchetti','f','Italia','Roma','Roma','2010-05-25','miazu@gmail.com',1),('SDDDDD55D55D555D','Paolo','Salvi','f','Italia','Roma','Roma','2006-02-03','paolosalvi@gmail.com',1),('ZDDDDD55D55D555D','Mauro','Cuoco','f','Italia','Roma','Roma','2006-12-12','maurocuoco@gmail.com',0),('ZZZZZZ11Z11Z111Q','Sergio','Bottone','m','Italia','Roma','Roma','2007-06-06','srgiobottone@gmail.com',1);
 /*!40000 ALTER TABLE `allievo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -74,7 +74,7 @@ CREATE TABLE `allievo_in_classe` (
 
 LOCK TABLES `allievo_in_classe` WRITE;
 /*!40000 ALTER TABLE `allievo_in_classe` DISABLE KEYS */;
-INSERT INTO `allievo_in_classe` VALUES ('2023/2024','AADDDD55D55D555D',1,'A'),('2023/2024','ADDDDD31D33D313A',1,'A'),('2023/2024','ADDDDD44D44D444A',1,'A'),('2023/2024','ADDDDD55D33D333A',1,'A');
+INSERT INTO `allievo_in_classe` VALUES ('2023/2024','AADDDD55D55D555D',1,'A'),('2023/2024','ADDDDD31D33D313A',1,'A'),('2023/2024','ADDDDD44D44D444A',1,'A'),('2023/2024','ADDDDD55D33D333A',1,'A'),('2023/2024','SDDDDD55D55D555D',1,'B'),('2023/2024','ZDDDDD55D55D555D',1,'B'),('2023/2024','ZZZZZZ11Z11Z111Q',1,'B'),('2023/2024','ALDDDD01D33D333A',2,'A'),('2023/2024','DDDDDD55D55D555S',2,'A'),('2023/2024','NDDDDD55D55D555D',2,'A'),('2023/2024','ALDDDD00D33D333A',2,'B'),('2023/2024','ALDDDD02D44D444D',2,'B'),('2023/2024','DADDDD55D55D555D',2,'B');
 /*!40000 ALTER TABLE `allievo_in_classe` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -271,12 +271,12 @@ CREATE TABLE `prova` (
   `voto` int(2) DEFAULT NULL,
   `abilitato` int(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`data_ora`),
-  KEY `cf_allievo` (`cf_allievo`),
-  KEY `cf_docente` (`cf_docente`),
-  KEY `nome_materia` (`nome_materia`),
-  CONSTRAINT `prova_ibfk_1` FOREIGN KEY (`cf_allievo`) REFERENCES `allievo` (`cf`),
-  CONSTRAINT `prova_ibfk_2` FOREIGN KEY (`cf_docente`) REFERENCES `docente` (`cf`),
-  CONSTRAINT `prova_ibfk_3` FOREIGN KEY (`nome_materia`) REFERENCES `materia` (`nome`)
+  KEY `fk_prova_allievo` (`cf_allievo`),
+  KEY `fk_prova_docente` (`cf_docente`),
+  KEY `fk_prova_materia` (`nome_materia`),
+  CONSTRAINT `fk_prova_allievo` FOREIGN KEY (`cf_allievo`) REFERENCES `allievo_in_classe` (`cf_allievo`),
+  CONSTRAINT `fk_prova_docente` FOREIGN KEY (`cf_docente`) REFERENCES `docente_classe` (`cf_docente`),
+  CONSTRAINT `fk_prova_materia` FOREIGN KEY (`nome_materia`) REFERENCES `docente_materia` (`nome_materia`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -286,7 +286,7 @@ CREATE TABLE `prova` (
 
 LOCK TABLES `prova` WRITE;
 /*!40000 ALTER TABLE `prova` DISABLE KEYS */;
-INSERT INTO `prova` VALUES ('2023-10-15 09:00:00','AAAAAA11A11A111A','HHHHH111H11H111H','Biologia',8,1),('2023-11-15 09:00:00','AAAAAA11A11A111A','HHHHH111H11H111H','Biologia',6,1),('2024-05-09 08:00:00','AAAAAA11A11A111A','ZZZZZZ11Z11Z111Z','Matematica',8,1),('2024-05-13 18:42:42','AAAAAA11A11A111A','DDDDDD22D22D222D','Fisica',5,1),('2024-05-13 18:45:32','AAAAAA11A11A111A','DDDDDD22D22D222D','Fisica',6,1);
+INSERT INTO `prova` VALUES ('2024-05-25 18:56:46','ADDDDD31D33D313A','DDDDDD05D55D555D','Fisica',8,1),('2024-05-25 19:35:48','NDDDDD55D55D555D','DDDDDD55D55D550D','Italiano',8,1),('2024-05-25 19:38:54','ALDDDD02D44D444D','DDDDDD66D66D666D','Matematica',9,1);
 /*!40000 ALTER TABLE `prova` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -321,7 +321,7 @@ CREATE TABLE `utente` (
 
 LOCK TABLES `utente` WRITE;
 /*!40000 ALTER TABLE `utente` DISABLE KEYS */;
-INSERT INTO `utente` VALUES ('user1','pass1',1,1,NULL,NULL,'ADDDDD33D33D333A'),('user2','pass2',1,2,NULL,'DDDDDD22D22D222D',NULL),('user3','pass3',1,3,'AAAAAA11A11A111A',NULL,NULL);
+INSERT INTO `utente` VALUES ('docente2','docente2',1,2,NULL,'DDDDDD66D66D666D',NULL),('docente3','docente3',1,2,NULL,'DDDDDD55D55D550D',NULL),('user1','pass1',1,1,NULL,NULL,'ADDDDD33D33D333A'),('user2','pass2',1,2,NULL,'DDDDDD05D55D555D',NULL),('user3','pass3',1,3,'AAAAAA11A11A111A',NULL,NULL);
 /*!40000 ALTER TABLE `utente` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -386,4 +386,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-05-25 10:11:22
+-- Dump completed on 2024-05-25 19:39:39

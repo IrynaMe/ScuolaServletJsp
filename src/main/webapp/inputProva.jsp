@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+    <%@ page import="java.util.HashMap" %>
     <%@ page import="java.util.ArrayList" %>
     <%@ page import="java.lang.Integer" %>
     <%@ page import="main.servlet.Persona" %>
+    <%@ page import="java.util.Map" %>
+
 
 
     <meta charset="UTF-8">
@@ -86,13 +89,17 @@ else if(step.equals("allievoSelect")){
            <label for="selectAllievo">Allievo</label>
            <select name="allievo" class="form-control" id="selectAllievo">
                <%
-               ArrayList<Persona> allieviInClasse = (ArrayList<Persona>) request.getAttribute("listaAllieviInClasse");
-               if (allieviInClasse != null && !allieviInClasse.isEmpty()) {
-                   for (Persona allievo : allieviInClasse) {
 
+               Map<Persona,String> allieviInClasse=(HashMap<Persona,String>)request.getAttribute("mappaAllieviInClasse");
+
+              if (allieviInClasse != null && !allieviInClasse.isEmpty()) {
+
+                          for (Map.Entry<Persona, String> entry : allieviInClasse.entrySet()) {
+                            Persona allievo = entry.getKey();
+                            String classe=entry.getValue();
                    %>
                         <option value="<%= allievo.getCf() %>_<%= allievo.getNome() %>_<%= allievo.getCognome() %>">
-                            <%= allievo.getCf() %> <%= allievo.getNome() %> <%= allievo.getCognome() %>
+                            <%= classe %> | <%= allievo.getNome() %> | <%= allievo.getCognome() %> | <%= allievo.getCf() %>
                         </option>
 
                    <% }
