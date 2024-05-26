@@ -27,11 +27,11 @@
     <h2>Inserisci il Codice Fiscale</h2>
     <form action="ScuolaServlet" method="GET">
         <div class="form-group">
-            <label for="cfInput">Codice Fiscale:</label>
+            <label for="cfInput">Inserisci CF di <%= request.getParameter("personType") %></label>
             <input type="text" class="form-control" id="cfInput" name="cf" placeholder="Inserisci il codice fiscale">
         </div>
         <!-- Hidden input field to pass personType -->
-        <input type="hidden" id="personTypeInput" name="personType" value="allievo">
+        <input type="hidden" id="personTypeInput" name="personType" value="<%= request.getParameter("personType") %>">
         <!-- Hidden input field to specify the action -->
         <input type="hidden" name="action" value="cercaPersona">
         <button type="submit" class="btn btn-primary" name="submitAction" value="cerca">Cerca</button>
@@ -51,20 +51,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
 
-<script>
-    // Function to extract URL parameter value by name
-    function getUrlParameter(name) {
-        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-        var results = regex.exec(location.search);
-        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-    }
 
-    // Set the value of personType input field based on the URL parameter
-    var personType = getUrlParameter('personType');
-    document.getElementById('personTypeInput').value = personType;
-
-    }
-</script>
 </body>
 </html>
