@@ -55,9 +55,8 @@
         </table>
          </br>
 
-
        <div class="back-button my-4">
-            <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-primary">Torna alla Menu</a>
+            <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-secondary">Torna alla Menu</a>
        </div>
     </div>
 </div>

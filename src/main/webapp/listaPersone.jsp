@@ -55,9 +55,9 @@ ArrayList<Persona> persone= (ArrayList<Persona>) request.getAttribute("persone")
                 <% } %>
             </tbody>
         </table>
-        <div class="back-button my-4">
-            <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-primary">Torna alla Menu</a>
-        </div>
+       <div class="back-button my-4">
+            <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-secondary">Torna alla Menu</a>
+       </div>
     </div>
 
     <!-- Bootstrap JS and dependencies -->

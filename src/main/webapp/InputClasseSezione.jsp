@@ -62,30 +62,16 @@
         </div>
         <button type="submit" class="btn btn-primary">Stampa allievi</button> <!-- Added submit button -->
     </form>
- </br>
-         <!-- Back button form -->
-            <form id="backForm" action="ScuolaServlet" method="post">
-                <input type="hidden" name="formType" value="login">
-            </form>
-
-        </br>
-            <!-- Back button -->
-            <div class="back-button">
-                <button onclick="submitBackForm()" class="btn btn-secondary">Torna al Menu</button>
-            </div>
+       <div class="back-button my-4">
+            <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-secondary">Torna alla Menu</a>
+       </div>
 </div>
 
 <!-- Bootstrap JS and dependencies -->
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-<script>
 
-    // Function to submit the back form
-    function submitBackForm() {
-        document.getElementById('backForm').submit();
-    }
-</script>
 </body>
 </html>
 
