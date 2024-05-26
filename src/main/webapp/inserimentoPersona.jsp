@@ -1,7 +1,10 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+ <%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+<%@ page import="main.servlet.ProvinceItalia" %>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inserimento Persona</title>
@@ -65,19 +68,33 @@
             </div>
         </fieldset>
 
-        <div class="row mb-3">
-            <label for="inputStatoNascita" class="col-sm-3 col-form-label">Stato di Nascita</label>
-            <div class="col-sm-9">
-                <input type="text" class="form-control" name="statoNascita" id="inputStatoNascita" placeholder="Stato di Nascita" required>
-            </div>
-        </div>
+<div class="row mb-3">
+    <label for="inputStatoNascita" class="col-sm-3 col-form-label">Stato di Nascita</label>
+    <div class="col-sm-9">
+        <select class="form-select" name="statoNascita" id="inputStatoNascita" required>
+            <option value="Italia">Italia</option>
+            <option value="Estero">Estero</option>
+        </select>
+    </div>
+</div>
+<div class="row mb-3">
+    <label for="inputProvinciaNascita" class="col-sm-3 col-form-label">Provincia di Nascita</label>
+    <div class="col-sm-9">
+        <select class="form-select" name="provinciaNascita" id="inputProvinciaNascita" required>
+            <% for (ProvinceItalia provincia : ProvinceItalia.values()) { %>
+                <option value="<%= provincia.getNome() %>"><%= provincia.getNome() %> (<%= provincia.getSigla() %>)</option>
+            <% } %>
+        </select>
+    </div>
+</div>
 
+<!--
         <div class="row mb-3">
             <label for="inputProvinciaNascita" class="col-sm-3 col-form-label">Provincia di Nascita</label>
             <div class="col-sm-9">
                 <input type="text" class="form-control" name="provinciaNascita" id="inputProvinciaNascita" placeholder="Provincia di Nascita" required>
             </div>
-        </div>
+        </div> -->
 
         <div class="row mb-3">
             <label for="inputComuneNascita" class="col-sm-3 col-form-label">Comune di Nascita</label>
