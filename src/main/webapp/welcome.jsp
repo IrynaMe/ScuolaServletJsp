@@ -14,11 +14,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Full-height background image */
-        body {
-            background: url('pics/books.jpg') no-repeat center center fixed;
-            background-size: cover;
-        }
+
 
         .content-container {
             background: rgba(255, 255, 255, 0.8); /* White background with transparency */
@@ -60,7 +56,7 @@
                     Set<String> sectionsDocente= gestioneMenu.getSectionsDocente();
                     Set<String> sectionsAllievo= gestioneMenu.getSectionsAllievo();
                 %>
-                <div class='alert alert-info' role='alert'>
+                <div class='alert alert-primary' role='alert'>
                     Data di oggi: <%= sCurrentDate %>  |    Utente corrente: <%= currentUser %>  |   Profilo: <%= currentProfile %>
                 </div>
 

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -428,46 +429,14 @@ public class ScuolaServlet extends HttpServlet {
             System.out.println("Database error" + e);
         }
 
-        response.setContentType("text/html");
-        writer = response.getWriter();
-        String nomeTabellaPlurale = nomeTabellaPersona.substring(0, nomeTabellaPersona.length() - 1) + "i";
-        writer.println("<html><head><title>Lista di " + nomeTabellaPlurale + "</title>");
-        writer.println("<style>");
-        writer.println("table { font-family: arial, sans-serif; border-collapse: collapse; width: 100%; margin-bottom: 20px; }");
-        writer.println("td, th { border: 1px solid #dddddd; text-align: left; padding: 8px; }");
-        writer.println("tr:nth-child(even) { background-color: #dddddd; }");
-        writer.println(".back-button { display: flex; justify-content: center; margin: 20px 0; }");
-        writer.println(".back-button button { margin: 0 5px; padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }");
-        writer.println(".back-button button:hover { background-color: #45a049; }");
-        writer.println("</style>");
-        writer.println("</head><body>");
+        // Set the list of personas as a request attribute
+        request.setAttribute("persone", persone);
+        request.setAttribute("personType", personType);
 
-        writer.println("<h2>Lista di " + nomeTabellaPlurale + "</h2>");
-        writer.println("<table>");
-        writer.println("<tr><th>CF</th><th>Nome</th><th>Cognome</th><th>Sesso</th><th>Stato nascita</th><th>Provincia nascita</th><th>Comune nascita</th><th>Data nascita</th><th>Email</th><th>Abilitato</th></tr>");
-        for (Persona element : persone) {
-            writer.println("<tr>");
-            writer.println("<td>" + element.getCf() + "</td>");
-            writer.println("<td>" + element.getNome() + "</td>");
-            writer.println("<td>" + element.getCognome() + "</td>");
-            writer.println("<td>" + element.getSesso() + "</td>");
-            writer.println("<td>" + element.getStatoNascita() + "</td>");
-            writer.println("<td>" + element.getProvinciaNascita() + "</td>");
-            writer.println("<td>" + element.getComuneNascita() + "</td>");
-            writer.println("<td>" + element.getDataNascita() + "</td>");
-            writer.println("<td>" + element.getEmail() + "</td>");
-            writer.println("<td>" + element.getAbilitato() + "</td>");
-            writer.println("</tr>");
-        }
-        writer.println("</table>");
-
-        // Add button to go back to welcome page
-        writer.println("<div class='back-button'>");
-        writer.println("<a href='" + request.getContextPath() + "/welcome.jsp'><button>Torna alla Menu</button></a>");
-        writer.println("</div>");
-
-        writer.println("</body></html>");
-        writer.flush();
+        // Forward the request to the JSP page
+       // RequestDispatcher dispatcher = request.getRequestDispatcher("listaPersone.jsp");
+       // dispatcher.forward(request, response);
+        sendHtmlPage("listaPersone.jsp", request, response);
     }
 
     //per preparare il form InputclasseSezione

@@ -4,28 +4,13 @@
     <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
     <%@ page import="java.util.ArrayList" %>
     <%@ page import="main.servlet.Persona" %>
+      <%@ page import="java.lang.Integer" %>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Composizione della classe</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        table {
-            font-family: arial, sans-serif;
-            border-collapse: collapse;
-            width: 100%;
-        }
 
-        td, th {
-            border: 1px solid #dddddd;
-            text-align: left;
-            padding: 8px;
-        }
-
-        tr:nth-child(even) {
-            background-color: #dddddd;
-        }
-    </style>
 </head>
 <body>
 <div class="container">
@@ -39,40 +24,41 @@
 
         <%
         ArrayList<Persona> listaAllievi = (ArrayList<Persona>) request.getAttribute("listaAllievi");
+        Integer n=0;
         %>
 
-        <table>
-            <tr>
-                <th>CF</th>
-                <th>Nome</th>
-                <th>Cognome</th>
+        <table class="table table-hover">
+        <thead>
 
-                <th>Email</th>
+            <tr class="table-primary">
+                <th scope="col">#</th>
+                <th scope="col">CF</th>
+                <th scope="col">Nome</th>
+                <th scope="col">Cognome</th>
 
-            </tr>
+                <th scope="col">Email</th>
 
+                </tr>
+              </thead>
+        <tbody>
             <% for (Persona all : listaAllievi) { %>
                 <tr>
+                <th scope="row"><%= ++n %></th>
                     <td><%= all.getCf() %></td>
                     <td><%= all.getNome() %></td>
                     <td><%= all.getCognome() %></td>
-
                     <td><%= all.getEmail() %></td>
 
                 </tr>
             <% } %>
+            </tbody>
         </table>
          </br>
-         <!-- Back button form -->
-            <form id="backForm" action="ScuolaServlet" method="post">
-                <input type="hidden" name="formType" value="login">
-            </form>
 
-        </br>
-            <!-- Back button -->
-            <div class="back-button">
-                <button onclick="submitBackForm()" class="btn btn-secondary">Torna al Menu</button>
-            </div>
+
+       <div class="back-button my-4">
+            <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-primary">Torna alla Menu</a>
+       </div>
     </div>
 </div>
 
@@ -82,12 +68,6 @@
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-<script>
 
-    // Function to submit the back form
-    function submitBackForm() {
-        document.getElementById('backForm').submit();
-    }
-</script>
 </body>
 </html>

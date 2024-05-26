@@ -35,7 +35,7 @@ default: currentProfile = "unknown";
 
 String userCf = (String) session.getAttribute("userCf");
 %>
- <div class='alert alert-info' role='alert'>
+ <div class='alert alert-primary' role='alert'>
                     Utente corrente: <%= currentUser %>
                     Profilo: <%= currentProfile %>
                     Cf: <%= userCf %>

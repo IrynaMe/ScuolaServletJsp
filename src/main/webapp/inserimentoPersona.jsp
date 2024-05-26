@@ -1,3 +1,4 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,16 +18,17 @@
         .form-heading {
             margin-bottom: 30px;
         }
+
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 class="form-heading text-center">Inserisci una nuova persona</h2>
+    <h2 class="form-heading text-center">Inserisci un nuovo <%= request.getParameter("personType") %></h2>
 
     <form action="ScuolaServlet" method="post">
         <input type="hidden" name="formType" value="newPerson">
-        <input type="hidden" name="personType" id="personType" value="">
+        <input type="hidden" name="personType" id="personType" value="<%= request.getParameter("personType") %>">
 
         <div class="row mb-3">
             <label for="inputCodiceFiscale" class="col-sm-3 col-form-label">Codice Fiscale</label>
@@ -54,11 +56,11 @@
             <div class="col-sm-9">
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="sesso" id="sessoM" value="m" checked required>
-                    <label class="form-check-label" for="sessoM">M</label>
+                    <label class="form-check-label " for="sessoM">M</label>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="sesso" id="sessoF" value="f" required>
-                    <label class="form-check-label" for="sessoF">F</label>
+                    <label class="form-check-label " for="sessoF">F</label>
                 </div>
             </div>
         </fieldset>
@@ -98,7 +100,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Aggiungi persona</button>
+        <button type="submit" class="btn btn-primary">Aggiungi <%= request.getParameter("personType") %> </button>
     </form>
     <div class="mandatory-fields">*Tutti i campi sono obbligatori</div>
     <!-- Back button form -->
@@ -122,13 +124,11 @@
     // Set the personType hidden input value
     document.getElementById('personType').value = getQueryParam('personType');
 
-
-      // Function to submit the back form
+    // Function to submit the back form
     function submitBackForm() {
         document.getElementById('backForm').submit();
     }
 </script>
-
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
 </body>
