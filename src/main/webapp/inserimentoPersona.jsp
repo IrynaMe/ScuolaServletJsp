@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,7 +75,9 @@
         </select>
     </div>
 </div>
+
 <div class="row mb-3">
+  <form action="ScuolaServlet" method="GET">
     <label for="inputProvinciaNascita" class="col-sm-3 col-form-label">Provincia di Nascita</label>
     <div class="col-sm-9">
         <select class="form-select" name="provinciaNascita" id="inputProvinciaNascita" required>
@@ -86,6 +86,8 @@
             <% } %>
         </select>
     </div>
+     <button type="submit" class="btn btn-primary">Conferma</button>
+    </form>
 </div>
 
 <!--

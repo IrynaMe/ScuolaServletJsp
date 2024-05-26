@@ -2,6 +2,8 @@ package main.servlet;
 
 import main.librerie.ManageDb;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -9,11 +11,9 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import javax.servlet.RequestDispatcher;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -21,6 +21,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 public class ScuolaServlet extends HttpServlet {
     private ManageDb mioDB;
     //   private static final int RECORDS_PER_PAGE = 10;
@@ -31,6 +36,10 @@ public class ScuolaServlet extends HttpServlet {
     private String allievoCf;
     private String allievoNome;
     private String allievoCognome;
+    private String statoScelto;
+    private String provinciaScelta;
+    private String comuneScelta;
+    private String personType; // object of interest
     // String passwordCorrente = null;
     PrintWriter writer;
     boolean isConnected;
@@ -112,39 +121,7 @@ public class ScuolaServlet extends HttpServlet {
             sendHtmlPage("index.html", request, response);
         }
     }
-    private void scegliMateria(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false); // Retrieve the existing session
-        if (session == null) {
-            System.out.println("Session is null");
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Session not found");
-            return;
-        }
 
-        cfUser = (String) session.getAttribute("userCf");
-        userProfile = (Integer) session.getAttribute("currentProfile");
-
-        System.out.println("in scegliMateria");
-        ArrayList<String> materie = new ArrayList<>();
-
-        String sqlQuery = "SELECT DISTINCT nome_materia FROM docente_classe WHERE cf_docente='" + cfUser + "'";
-        System.out.println(sqlQuery);
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                materie.add(resultSet.getString("nome_materia"));
-            }
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e);
-        }
-
-
-        // Condivido l'arraylist con pagina JSP
-        request.setAttribute("listaMaterie", materie);
-
-        // mando alla paggina
-       String nextPage = "inputProva.jsp?step=materiaSelect";
-      sendHtmlPage(nextPage, request, response);
-
-    }
 
     /**
      * this life-cycle method is invoked when this servlet is first accessed
@@ -207,6 +184,16 @@ public class ScuolaServlet extends HttpServlet {
                 allievoNome = allievoParts[1];
                 allievoCognome = allievoParts[2];
                 sendHtmlPage("inputProva.jsp?step=provaInput", request, response);
+            }else if ("confermaStato".equals(action)) {
+
+                dammiProvince(request,response);
+            }else if ("confermaProvincia".equals(action)) {
+
+                dammiComuni(request,response);
+
+            }else if ("confermaComune".equals(action)) {
+                comuneScelta=request.getParameter("comuneNascita");
+                sendHtmlPage("inserimentoPersona2.jsp?step=datiPersona", request, response);
             }else {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
             }
@@ -231,6 +218,110 @@ public class ScuolaServlet extends HttpServlet {
         }else if (formTypeScelta.equals("newProva")) {
             inserimentoProva(request, response);
         }
+    }
+   /* public void dammiProvince(HttpServletRequest request, HttpServletResponse response) throws IOException{
+        personType = request.getParameter("personType");
+        statoScelto = request.getParameter("statoNascita");
+        System.out.println("sono in dammiProvince");
+        System.out.println("Stato: " + statoScelto);
+
+        String url;
+        if (statoScelto.equalsIgnoreCase("Italia")) {
+            url = "inserimentoPersona2.jsp?step=datiProvincia&personType=" + personType;
+        } else {
+            url = "inserimentoPersona2.jsp?step=datiPersona&personType=" + personType;
+        }
+
+        sendHtmlPage(url, request, response);
+    }*/
+   public void dammiProvince(HttpServletRequest request, HttpServletResponse response) throws IOException {
+       System.out.println("sono in dammiProvince");
+       Set<String> province = new TreeSet<>();
+       personType = request.getParameter("personType");
+       statoScelto = request.getParameter("statoNascita");
+       String url;
+       if (statoScelto.equalsIgnoreCase("Italia")) {
+           try {
+               FileInputStream file = new FileInputStream(new File("C:\\Users\\183360\\IdeaProjects\\ServletProva\\ServletIntellij4\\src\\main\\webapp\\files\\comuni.xls"));
+               System.out.println("sono in try block");
+               HSSFWorkbook workbook = new HSSFWorkbook(file);
+               HSSFSheet sheet = workbook.getSheetAt(0); // province in the first sheet
+
+               Iterator rows = sheet.rowIterator();
+               boolean firstRow = true;
+
+               while (rows.hasNext()) {
+                   HSSFRow row = (HSSFRow) rows.next();
+                   if (firstRow) {
+                       firstRow = false;
+                       continue; // Salto prima riga con titolo
+                   }
+
+                   HSSFCell provinciaCell = row.getCell(0); // provincia column is at index 0
+                   if (provinciaCell != null) {
+                       province.add(provinciaCell.getStringCellValue());
+                   }
+               }
+
+               workbook.close();
+               file.close();
+           } catch (IOException e) {
+               e.printStackTrace();
+           }
+
+           // Condivido l'arraylist con pagina JSP
+           request.setAttribute("listaProvince", province);
+           url = "inserimentoPersona2.jsp?step=datiProvincia&personType=" + personType;
+       } else {
+           comuneScelta="Estero";
+           provinciaScelta="Estero";
+           url = "inserimentoPersona2.jsp?step=datiPersona&personType=" + personType;
+       }
+
+
+
+       sendHtmlPage(url, request, response);
+   }
+
+
+    public void dammiComuni(HttpServletRequest request, HttpServletResponse response) throws IOException{
+        System.out.println("sono in dammiComuni");
+
+        provinciaScelta=request.getParameter("provinciaNascita");
+
+        List<String> comuni = new ArrayList<>();
+        List<String> province=new ArrayList<>();
+        try {
+            FileInputStream file = new FileInputStream(new File("C:\\Users\\183360\\IdeaProjects\\ServletProva\\ServletIntellij4\\src\\main\\webapp\\files\\comuni.xls"));
+            System.out.println("sono in try block");
+            HSSFWorkbook workbook = new HSSFWorkbook(file);
+            HSSFSheet sheet = workbook.getSheetAt(0); // comuni are in the first sheet
+
+            Iterator rows = sheet.rowIterator();
+            while (rows.hasNext()) {
+                HSSFRow row = (HSSFRow) rows.next();
+                HSSFCell provinciaCell = row.getCell(0); // provincia column is at index 0
+                if (provinciaCell != null && provinciaCell.getStringCellValue().equals(provinciaScelta)) {
+                    HSSFCell comuneCell = row.getCell(1); // comune name is in the second column
+                    if (comuneCell != null) {
+                        comuni.add(comuneCell.getStringCellValue());
+                    }
+                }
+            }
+            workbook.close();
+            file.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        for(String comune:comuni){
+            System.out.println(comune);
+        }
+        // Condivido l'arraylist con pagina JSP
+        request.setAttribute("listaComuni",comuni);
+
+        // mando alla paggina
+        String nextPage = "inserimentoPersona2.jsp?step=datiComune";
+        sendHtmlPage(nextPage, request, response);
     }
 
     private void inserimentoProva(HttpServletRequest request, HttpServletResponse response) throws IOException{
@@ -268,7 +359,39 @@ public class ScuolaServlet extends HttpServlet {
         sendHtmlPage("welcome.jsp", request, response);
     }
 
+    private void scegliMateria(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpSession session = request.getSession(false); // Retrieve the existing session
+        if (session == null) {
+            System.out.println("Session is null");
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Session not found");
+            return;
+        }
 
+        cfUser = (String) session.getAttribute("userCf");
+        userProfile = (Integer) session.getAttribute("currentProfile");
+
+        System.out.println("in scegliMateria");
+        ArrayList<String> materie = new ArrayList<>();
+
+        String sqlQuery = "SELECT DISTINCT nome_materia FROM docente_classe WHERE cf_docente='" + cfUser + "'";
+        System.out.println(sqlQuery);
+        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+            while (resultSet.next()) {
+                materie.add(resultSet.getString("nome_materia"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e);
+        }
+
+
+        // Condivido l'arraylist con pagina JSP
+        request.setAttribute("listaMaterie", materie);
+
+        // mando alla paggina
+        String nextPage = "inputProva.jsp?step=materiaSelect";
+        sendHtmlPage(nextPage, request, response);
+
+    }
     //da chiamare in inserimentoProva
     private void dammiAllieviInClasse(HttpServletRequest request, HttpServletResponse response) throws IOException {
         System.out.println("sono in dammiAllievoInClasse");
@@ -351,14 +474,13 @@ public class ScuolaServlet extends HttpServlet {
         String nome = request.getParameter("nome");
         String cognome = request.getParameter("cognome");
         String sesso = request.getParameter("sesso");
-        String statoNascita = request.getParameter("statoNascita");
-        String provinciaNascita = request.getParameter("provinciaNascita");
-        String comuneNascita = request.getParameter("comuneNascita");
+
         String dataNascita = request.getParameter("dataNascita"); // YYYY-MM-DD
         String email = request.getParameter("email");
         LocalDate date = LocalDate.parse(dataNascita);
+
         //new obj persona abilitato è 1 by default in DB
-        Persona persona = new Persona(codiceFiscale, nome, cognome, sesso, statoNascita, provinciaNascita, comuneNascita, date, email);
+        Persona persona = new Persona(codiceFiscale, nome, cognome, sesso, statoScelto, provinciaScelta, comuneScelta, date, email);
 
         String sqlInsert = "INSERT INTO " + nomeTabellaPersona + " (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('"
                 + persona.getCf() + "', '"
@@ -383,9 +505,9 @@ public class ScuolaServlet extends HttpServlet {
                     "Nome: " + nome + "\\n" +
                     "Cognome: " + cognome + "\\n" +
                     "Sesso: " + sesso + "\\n" +
-                    "Stato di Nascita: " + statoNascita + "\\n" +
-                    "Provincia di Nascita: " + provinciaNascita + "\\n" +
-                    "Comune di Nascita: " + comuneNascita + "\\n" +
+                    "Stato di Nascita: " + statoScelto + "\\n" +
+                    "Provincia di Nascita: " + provinciaScelta + "\\n" +
+                    "Comune di Nascita: " + comuneScelta + "\\n" +
                     "Data di Nascita: " + dataNascita + "\\n" +
                     "Email: " + email + "');");
         } else {
