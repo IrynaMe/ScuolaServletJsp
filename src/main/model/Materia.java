@@ -1,4 +1,4 @@
-package main.servlet;
+package main.model;
 
 public class Materia {
     private String codice;

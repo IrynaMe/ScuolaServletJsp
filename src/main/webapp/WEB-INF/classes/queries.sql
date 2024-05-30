@@ -1,0 +1,3 @@
+INSERT INTO allievo (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('AAAAAA11A11A111A', 'Iryna', 'Melnikava', 'm', 'Estero', 'Estero', 'Estero', '2024-05-11', 'irinam7a@gmail.com')
+INSERT INTO prova (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('AAAAAA11A11A111A', 'Iryna', 'Melnikava', 'm', 'Estero', 'Estero', 'Estero', '2024-05-11', 'irinam7a@gmail.com')
+INSERT INTO allievo (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('AAAAAA11A11A111B', 'Iryna', 'Melnikava', 'm', 'Estero', 'Estero', 'Estero', '2024-05-10', 'irinam7a@gmail.com')

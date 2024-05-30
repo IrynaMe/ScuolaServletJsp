@@ -1,4 +1,4 @@
-package main.servlet;
+package main.model;
 
 import java.time.LocalDate;
 

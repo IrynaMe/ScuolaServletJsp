@@ -5,7 +5,7 @@
     <%@ page import="java.util.HashMap" %>
     <%@ page import="java.util.ArrayList" %>
     <%@ page import="java.lang.Integer" %>
-    <%@ page import="main.servlet.Persona" %>
+    <%@ page import="main.model.Persona" %>
     <%@ page import="java.util.Map" %>
 
 

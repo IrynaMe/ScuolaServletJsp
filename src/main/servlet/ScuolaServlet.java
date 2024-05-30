@@ -1,12 +1,13 @@
 package main.servlet;
 
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
-import com.opencsv.exceptions.CsvValidationException;
+import main.librerie.GestioneFile;
 import main.librerie.ManageDb;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -16,6 +17,7 @@ import java.util.*;
 
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +28,9 @@ import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Set;
 
+
+import main.model.Persona;
+import main.model.Prova;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -33,7 +38,9 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 public class ScuolaServlet extends HttpServlet {
     private ManageDb mioDB;
-    //   private static final int RECORDS_PER_PAGE = 10;
+    Connection myConn;
+
+
     private String usernameCorrente;
     private Integer userProfile;
     private String cfUser;
@@ -44,106 +51,35 @@ public class ScuolaServlet extends HttpServlet {
     private String statoScelto;
     private String provinciaScelta;
     private String comuneScelta;
-    private String personType; // object of interest
-    // String passwordCorrente = null;
+    private String personType;
     PrintWriter writer;
-    boolean isConnected;
-
-    private void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        ResultSet resultSet = null;
-
-        HttpSession session = request.getSession(false); // prendo session se gia esiste, else null
-
-        if (session == null) {
-            session = request.getSession(); // Creo nuova session
-        } else {
-            // controllo se user gia logged in prima
-            if (session.getAttribute("currentUser") != null) {
-                sendHtmlPage("welcome.jsp", request, response);
-                return; // esco dal method
-            }
-        }
-
-        String usernameCorrente = request.getParameter("username");
-        String passwordCorrente = request.getParameter("password");
-
-
-        if (usernameCorrente != null && passwordCorrente != null) {
-            if (isConnected) {
-                try {
-                    String sqlQuery = "SELECT * FROM utente WHERE username='" + usernameCorrente + "' AND password='" + passwordCorrente + "' AND abilitato=1";
-                    resultSet = mioDB.readInDb(sqlQuery);
-                    if (resultSet.next()) {
-                        usernameCorrente = resultSet.getString("username");
-                        userProfile = resultSet.getInt("profilo");
-                        //prendo cf
-                        if (userProfile == 1) {
-                            cfUser = resultSet.getString("cf_amministrativo");
-                        } else if (userProfile == 2) {
-                            cfUser = resultSet.getString("cf_docente");
-                        } else if (userProfile == 3) {
-                            cfUser = resultSet.getString("cf_allievo");
-                        } else {
-                            PrintWriter writer = response.getWriter();
-                            writer.println("<script>");
-                            writer.println("alert('Problema di corrispondenza cf al profilo');");
-                            writer.println("</script>");
-                            writer.flush();
-                            sendHtmlPage("index.html", request, response);
-                        }
-
-                        session.setAttribute("currentUser", usernameCorrente); // Set session attribute
-                        session.setAttribute("currentProfile", userProfile);
-                        session.setAttribute("userCf", cfUser);
-                        //!!!!no need for request setAttr?
-                        request.setAttribute("currentUser", usernameCorrente);
-                        request.setAttribute("userCf", cfUser);
-                        sendHtmlPage("welcome.jsp", request, response);
-                    } else {
-                        PrintWriter writer = response.getWriter();
-                        writer.println("<script>");
-                        writer.println("alert('Utente con username e password inseriti NON TROVATO');");
-                        writer.println("</script>");
-                        writer.flush();
-                        sendHtmlPage("index.html", request, response);
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                PrintWriter writer = response.getWriter();
-                writer.println("<script>");
-                writer.println("alert('Problema di connessione con Database!');");
-                writer.println("</script>");
-                writer.flush();
-                sendHtmlPage("index.html", request, response);
-            }
-        } else {
-            PrintWriter writer = response.getWriter();
-            writer.println("<script>");
-            writer.println("alert('Non hai inserito username o/e password. Riprova');");
-            writer.println("</script>");
-            writer.flush();
-            sendHtmlPage("index.html", request, response);
-        }
-    }
-
+    private GestioneFile gestioneFile;
+    private String filePath;
 
     /**
      * this life-cycle method is invoked when this servlet is first accessed
      * by the client
      */
     @Override
-    public void init(ServletConfig config) {
+
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config); // Ensure the superclass init method is called
         System.out.println("Servlet is being initialized");
         mioDB = new ManageDb();
+        gestioneFile = new GestioneFile();
+
+        // Get the real path of the 'queries.sql' file in the resources directory
+        filePath = getServletContext().getRealPath("/WEB-INF/classes/queries.sql");
+        System.out.println("File path: " + filePath); // Log the file path
+
         usernameCorrente = null;
-        isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
-        //isConnected = mioDB.Connect("localhost", 3306, "gestione_scuola", "user_scuola", "scuola123");
-        if (isConnected) {
-            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
-        } else {
-            System.out.println("Non ho connesso con db");
+
+        // Ensure the directory exists
+        Path file = Paths.get(filePath);
+        try {
+            Files.createDirectories(file.getParent());
+        } catch (IOException e) {
+            System.out.println("An error occurred while creating the directory: " + e.getMessage());
         }
     }
 
@@ -224,18 +160,118 @@ public class ScuolaServlet extends HttpServlet {
         }
     }
 
+
+    private void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        ResultSet resultSet = null;
+
+        HttpSession session = request.getSession(false); // prendo session se gia esiste, else null
+
+        if (session == null) {
+            session = request.getSession(); // Creo nuova session
+        } else {
+            // controllo se user gia logged in prima
+            if (session.getAttribute("currentUser") != null) {
+                sendHtmlPage("welcome.jsp", request, response);
+                return; // esco dal method
+            }
+        }
+
+        String usernameCorrente = request.getParameter("username");
+        String passwordCorrente = request.getParameter("password");
+
+        //host, port, db sono in resouces/config.peroperties
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+        } else {
+            System.out.println("Non ho connesso con db");
+        }
+        if (usernameCorrente != null && passwordCorrente != null) {
+            if (myConn != null) {
+                try {
+                    String sqlQuery = "SELECT * FROM utente WHERE username='" + usernameCorrente + "' AND password='" + passwordCorrente + "' AND abilitato=1";
+                    resultSet = mioDB.readInDb(sqlQuery);
+                    if (resultSet.next()) {
+                        usernameCorrente = resultSet.getString("username");
+                        userProfile = resultSet.getInt("profilo");
+                        //prendo cf
+                        if (userProfile == 1) {
+                            cfUser = resultSet.getString("cf_amministrativo");
+                        } else if (userProfile == 2) {
+                            cfUser = resultSet.getString("cf_docente");
+                        } else if (userProfile == 3) {
+                            cfUser = resultSet.getString("cf_allievo");
+                        } else {
+                            PrintWriter writer = response.getWriter();
+                            writer.println("<script>");
+                            writer.println("alert('Problema di corrispondenza cf al profilo');");
+                            writer.println("</script>");
+                            writer.flush();
+                            mioDB.disconnect();
+                            sendHtmlPage("index.html", request, response);
+                        }
+
+                        session.setAttribute("currentUser", usernameCorrente); // Set session attribute
+                        session.setAttribute("currentProfile", userProfile);
+                        session.setAttribute("userCf", cfUser);
+                        //!!!!no need for request setAttr?
+                        request.setAttribute("currentUser", usernameCorrente);
+                        request.setAttribute("userCf", cfUser);
+                        mioDB.disconnect();
+                        sendHtmlPage("welcome.jsp", request, response);
+                    } else {
+                        PrintWriter writer = response.getWriter();
+                        writer.println("<script>");
+                        writer.println("alert('Utente con username e password inseriti NON TROVATO');");
+                        writer.println("</script>");
+                        writer.flush();
+                        mioDB.disconnect();
+                        sendHtmlPage("index.html", request, response);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                PrintWriter writer = response.getWriter();
+                writer.println("<script>");
+                writer.println("alert('Problema di connessione con Database!');");
+                writer.println("</script>");
+                writer.flush();
+                sendHtmlPage("index.html", request, response);
+            }
+        } else {
+            PrintWriter writer = response.getWriter();
+            writer.println("<script>");
+            writer.println("alert('Non hai inserito username o/e password. Riprova');");
+            writer.println("</script>");
+            writer.flush();
+            sendHtmlPage("index.html", request, response);
+        }
+    }
+
     //da chiamare in cercaClasse
     private ArrayList<String> dammiAnniScolastici() {
         ArrayList<String> anniScolastici = new ArrayList<>();
         String sqlQuery = "SELECT DISTINCT anno_scolastico FROM allievo_in_classe";
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
 
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                anniScolastici.add(resultSet.getString("anno_scolastico"));
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+
+                while (resultSet.next()) {
+                    anniScolastici.add(resultSet.getString("anno_scolastico"));
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e);
+            } finally {
+                mioDB.disconnect();
             }
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e);
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
         return anniScolastici;
     }
 
@@ -243,14 +279,22 @@ public class ScuolaServlet extends HttpServlet {
     private ArrayList<Integer> dammiLivello() {
         ArrayList<Integer> livelli = new ArrayList<>();
         String sqlQuery = "SELECT DISTINCT livello_classe FROM allievo_in_classe";
-
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                livelli.add(resultSet.getInt("livello_classe"));
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                while (resultSet.next()) {
+                    livelli.add(resultSet.getInt("livello_classe"));
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e);
             }
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
         return livelli;
     }
 
@@ -259,30 +303,43 @@ public class ScuolaServlet extends HttpServlet {
     private ArrayList<String> dammiSezione() {
         ArrayList<String> sezioni = new ArrayList<>();
         String sqlQuery = "SELECT DISTINCT sezione_classe FROM allievo_in_classe";
-
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                sezioni.add(resultSet.getString("sezione_classe"));
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                while (resultSet.next()) {
+                    sezioni.add(resultSet.getString("sezione_classe"));
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e);
             }
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
         return sezioni;
     }
 
-    //prepare select province ->form inserimentoPersona
+    // Prepare select province -> form inserimentoPersona
     public void dammiProvince(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        System.out.println("sono in dammiProvince");
         Set<String> province = new TreeSet<>();
         personType = request.getParameter("personType");
         statoScelto = request.getParameter("statoNascita");
         String url;
+
         if (statoScelto.equalsIgnoreCase("Italia")) {
-            try {
-                FileInputStream file = new FileInputStream(new File("C:\\Users\\183360\\IdeaProjects\\ServletProva\\ServletIntellij4\\src\\main\\webapp\\files\\comuni.xls"));
-                System.out.println("sono in try block");
+            // Get the servlet context
+            ServletContext context = getServletContext();
+            String filePath = context.getRealPath("/WEB-INF/classes/comuni.xls"); // Adjust the file path here
+            try (InputStream file = new FileInputStream(filePath)) {
+                if (file == null) {
+                    throw new IOException("File not found: comuni.xls");
+                }
+
                 HSSFWorkbook workbook = new HSSFWorkbook(file);
-                HSSFSheet sheet = workbook.getSheetAt(0); // province in the first sheet
+                HSSFSheet sheet = workbook.getSheetAt(0); // provinces in the first sheet
 
                 Iterator rows = sheet.rowIterator();
                 boolean firstRow = true;
@@ -291,7 +348,7 @@ public class ScuolaServlet extends HttpServlet {
                     HSSFRow row = (HSSFRow) rows.next();
                     if (firstRow) {
                         firstRow = false;
-                        continue; // Salto prima riga con titolo
+                        continue; // Skip the first row with the title
                     }
 
                     HSSFCell provinciaCell = row.getCell(0); // provincia column is at index 0
@@ -299,14 +356,12 @@ public class ScuolaServlet extends HttpServlet {
                         province.add(provinciaCell.getStringCellValue());
                     }
                 }
-
                 workbook.close();
-                file.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            // Condivido l'arraylist con pagina JSP
+            // Share the TreeSet with the JSP page
             request.setAttribute("listaProvince", province);
             url = "inserimentoPersona2.jsp?step=datiProvincia&personType=" + personType;
         } else {
@@ -319,19 +374,20 @@ public class ScuolaServlet extends HttpServlet {
     }
 
 
-
-
-    //prepare select comuni ->form inserimentoPersona
+    // Prepare select comuni -> form inserimentoPersona
     public void dammiComuni(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        System.out.println("sono in dammiComuni");
-
         provinciaScelta = request.getParameter("provinciaNascita");
-
         List<String> comuni = new ArrayList<>();
-        List<String> province = new ArrayList<>();
-        try {
-            FileInputStream file = new FileInputStream(new File("C:\\Users\\183360\\IdeaProjects\\ServletProva\\ServletIntellij4\\src\\main\\webapp\\files\\comuni.xls"));
-            System.out.println("sono in try block");
+
+        // Get the servlet context
+        ServletContext context = getServletContext();
+
+        String filePath = context.getRealPath("/WEB-INF/classes/comuni.xls"); // Adjust the file path here
+        try (InputStream file = new FileInputStream(filePath)) {
+            if (file == null) {
+                throw new IOException("File not found: comuni.xls");
+            }
+
             HSSFWorkbook workbook = new HSSFWorkbook(file);
             HSSFSheet sheet = workbook.getSheetAt(0); // comuni are in the first sheet
 
@@ -347,20 +403,18 @@ public class ScuolaServlet extends HttpServlet {
                 }
             }
             workbook.close();
-            file.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (String comune : comuni) {
-            System.out.println(comune);
-        }
-        // Condivido l'arraylist con pagina JSP
+
+        // Set the list of comuni as a request attribute
         request.setAttribute("listaComuni", comuni);
 
-        // mando alla paggina
+        // Forward the request to the next page
         String nextPage = "inserimentoPersona2.jsp?step=datiComune";
         sendHtmlPage(nextPage, request, response);
     }
+
 
     //prepare select materia ->form inputProva
     private void scegliMateria(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -379,12 +433,20 @@ public class ScuolaServlet extends HttpServlet {
 
         String sqlQuery = "SELECT DISTINCT nome_materia FROM docente_classe WHERE cf_docente='" + cfUser + "'";
         System.out.println(sqlQuery);
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                materie.add(resultSet.getString("nome_materia"));
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                while (resultSet.next()) {
+                    materie.add(resultSet.getString("nome_materia"));
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e);
             }
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
 
 
@@ -421,22 +483,30 @@ public class ScuolaServlet extends HttpServlet {
                 "WHERE docente_classe.cf_docente = '" + cfUser + "' AND docente_classe.nome_materia = '" + materiaScelta + "'";
 
         System.out.println("query allievo in classe:" + sqlQuery);
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                while (resultSet.next()) {
+                    Persona allievo = new Persona(
+                            resultSet.getString("cf"),
+                            resultSet.getString("nome"),
+                            resultSet.getString("cognome"),
+                            resultSet.getString("email")
+                    );
+                    String classeSezione = resultSet.getString("livello_classe") + resultSet.getString("sezione_classe");
+                    allieviInClasse.put(allievo, classeSezione);
 
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                Persona allievo = new Persona(
-                        resultSet.getString("cf"),
-                        resultSet.getString("nome"),
-                        resultSet.getString("cognome"),
-                        resultSet.getString("email")
-                );
-                String classeSezione = resultSet.getString("livello_classe") + resultSet.getString("sezione_classe");
-                allieviInClasse.put(allievo, classeSezione);
-
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e);
             }
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
 
         // Condivido l'arraylist con pagina JSP
         request.setAttribute("mappaAllieviInClasse", allieviInClasse);
@@ -461,6 +531,7 @@ public class ScuolaServlet extends HttpServlet {
         // mando alla paggina
         sendHtmlPage("InputClasseSezione.jsp", request, response);
     }
+
     private String dammiNomeTabella(String personType) {
         String nomeTabellaPersona = null;
         switch (personType) {
@@ -481,59 +552,64 @@ public class ScuolaServlet extends HttpServlet {
     }
 
     private void inserimentoProva(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        System.out.println("sono in inserimento prova");
+        // System.out.println("sono in inserimento prova");
         HttpSession session = request.getSession(false);
         LocalDateTime dataora = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String formattedDateTime = dataora.format(formatter);
+
 
         String cfDocente = cfUser;
         //  String cfAllievo= (String) session.getAttribute("cfAllievo");
-
         // String cfAllievo=request.getParameter("cfAllievo");
 
-
         Integer voto = (Integer.parseInt(request.getParameter("voto")));
+        Prova prova = new Prova(dataora, allievoCf, cfDocente, materiaScelta, voto);
+        String formattedDateTime = prova.getDataOra().format(formatter);
         String sqlQuery = "INSERT INTO prova (data_ora, cf_allievo, cf_docente, nome_materia, voto) " +
-                "VALUES ('" + formattedDateTime + "', '" + allievoCf + "', '" + cfDocente + "', '" + materiaScelta + "', " + voto + ");";
+                "VALUES ('" + formattedDateTime + "', '" + prova.getCfAllievo() + "', '" + prova.getCfDocente() + "', '" + prova.getNomeMateria() + "', " + prova.getVoto() + ");";
         System.out.println(sqlQuery);
-        boolean isInserito = mioDB.writeInDb(sqlQuery);
-        System.out.println("inserimento: " + isInserito);
-        writer = response.getWriter();
-        writer.println("<script>");
-        if (isInserito) {
-            writer.println("alert('Prova inserita: " + allievoCognome + " " + allievoNome + " " + materiaScelta + " " + voto + "');");
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            boolean isInserito = mioDB.writeInDb(sqlQuery);
+            System.out.println("inserimento: " + isInserito);
+            writer = response.getWriter();
+            writer.println("<script>");
+            if (isInserito) {
+                writer.println("alert('Prova inserita: " + allievoCognome + " " + allievoNome + " " + materiaScelta + " " + voto + "');");
 
+            } else {
+                writer.println("alert('Errore nel inserimento prova');");
+            }
+            //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+            writer.println("</script>");
+            writer.flush();
+            mioDB.disconnect();
         } else {
-            writer.println("alert('Errore nel inserimento prova');");
+            System.out.println("Non ho connesso con db");
+        //salvaInFile
+
+
         }
-        //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
-        writer.println("</script>");
-        writer.flush();
-
-
         sendHtmlPage("welcome.jsp", request, response);
     }
 
 
     private void inserimentoPersona(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String personType = request.getParameter("personType");
-
         String nomeTabellaPersona = dammiNomeTabella(personType);
-
 
         String codiceFiscale = request.getParameter("codiceFiscale");
         String nome = request.getParameter("nome");
         String cognome = request.getParameter("cognome");
         String sesso = request.getParameter("sesso");
-
         String dataNascita = request.getParameter("dataNascita"); // YYYY-MM-DD
         String email = request.getParameter("email");
         LocalDate date = LocalDate.parse(dataNascita);
 
-        //new obj persona abilitato è 1 by default in DB
+        // New obj persona, abilitato is 1 by default in DB
         Persona persona = new Persona(codiceFiscale, nome, cognome, sesso, statoScelto, provinciaScelta, comuneScelta, date, email);
-
         String sqlInsert = "INSERT INTO " + nomeTabellaPersona + " (cf, nome, cognome, sesso, stato_nascita, provincia_nascita, comune_nascita, data_nascita, email) VALUES ('"
                 + persona.getCf() + "', '"
                 + persona.getNome() + "', '"
@@ -544,32 +620,106 @@ public class ScuolaServlet extends HttpServlet {
                 + persona.getComuneNascita() + "', '"
                 + persona.getDataNascita() + "', '"
                 + persona.getEmail() + "')";
+        // Controllo se cf e email gia sono in DB: 0 -> OK, 1 -> CF errore, 2 -> email errore, 3 -> CF + email errori
+        Integer errori = controlloIsNuovaPersona(persona, nomeTabellaPersona);
 
-        boolean isInserted = mioDB.writeInDb(sqlInsert);
         response.setContentType("text/html");
-        //stampo dati inseriti in browser come alert
-        writer = response.getWriter();
+        PrintWriter writer = response.getWriter();
 
-        writer.println("<script>");
-        if (isInserted) {
-            writer.println("alert('Nuovo " + nomeTabellaPersona + " inserito con successo!\\n" +
-                    "Codice Fiscale: " + codiceFiscale + "\\n" +
-                    "Nome: " + nome + "\\n" +
-                    "Cognome: " + cognome + "\\n" +
-                    "Sesso: " + sesso + "\\n" +
-                    "Stato di Nascita: " + statoScelto + "\\n" +
-                    "Provincia di Nascita: " + provinciaScelta + "\\n" +
-                    "Comune di Nascita: " + comuneScelta + "\\n" +
-                    "Data di Nascita: " + dataNascita + "\\n" +
-                    "Email: " + email + "');");
+        if (errori == 0) {
+            myConn = mioDB.Connect();
+            if (myConn != null) {
+                System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+
+                boolean isInserted = mioDB.writeInDb(sqlInsert);
+
+                writer.println("<script>");
+                if (isInserted) {
+                    writer.println("alert('Nuovo " + nomeTabellaPersona + " inserito con successo!\\n" +
+                            "Codice Fiscale: " + codiceFiscale + "\\n" +
+                            "Nome: " + nome + "\\n" +
+                            "Cognome: " + cognome + "\\n" +
+                            "Sesso: " + sesso + "\\n" +
+                            "Stato di Nascita: " + statoScelto + "\\n" +
+                            "Provincia di Nascita: " + provinciaScelta + "\\n" +
+                            "Comune di Nascita: " + comuneScelta + "\\n" +
+                            "Data di Nascita: " + dataNascita + "\\n" +
+                            "Email: " + email + "');");
+                    writer.println("window.location.href='welcome.jsp';");
+                } else {
+                    writer.println("alert('Errore durante l\'inserimento nel database');");
+                    writer.println("window.location.href='welcome.jsp';");
+                }
+                writer.println("</script>");
+                writer.flush();
+                mioDB.disconnect();
+            } else {
+                System.out.println("Non ho connesso con db");
+                gestioneFile.scriviQueryInFile(filePath, sqlInsert);
+                writer.println("<script>");
+                writer.println("alert('Problima di connessione al db, i dati sono salvati e veranno inseriti al successivo connessione al db');");
+                writer.println("window.location.href='welcome.jsp';");
+                writer.println("</script>");
+            }
         } else {
-            writer.println("alert('Errore di inserimento di un nuovo " + nomeTabellaPersona + " in database!');");
+            if (errori == 1) {
+                System.out.println("cf inserito è già presente nel db");
+                writer.println("<script>");
+                writer.println("alert('Errore: cf inserito è già presente nel db!');");
+                writer.println("window.location.href='welcome.jsp';");
+                writer.println("</script>");
+            } else if (errori == 2) {
+                System.out.println("email inserito è già presente nel db");
+                writer.println("<script>");
+                writer.println("alert('Errore: email inserito è già presente nel db!');");
+                writer.println("window.location.href='welcome.jsp';");
+                writer.println("</script>");
+            } else if (errori == 3) {
+                System.out.println("cf e email inseriti sono già presenti nel db");
+                writer.println("<script>");
+                writer.println("alert('Errore: cf e email inseriti sono già presenti nel db!');");
+                writer.println("window.location.href='welcome.jsp';");
+                writer.println("</script>");
+            }
+            writer.flush();
+            return;
         }
-
-        // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
-        writer.println("</script>");
-        writer.flush();
         sendHtmlPage("welcome.jsp", request, response);
+    }
+
+
+    // Return 0 if everything is okay, 1 if cf  duplicato, 2 if email  duplicato, 3 if cf e email duplicati
+    private Integer controlloIsNuovaPersona(Persona persona, String nomeTabellaPersona) {
+        ArrayList<Persona> listaPersone = new ArrayList<>();
+        String sqlSelect = "SELECT * from " + nomeTabellaPersona; // Added a space after 'from'
+        Integer result = 0;
+
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            try (ResultSet resultSet = mioDB.readInDb(sqlSelect)) {
+                while (resultSet.next()) {
+                    Persona personaDb = new Persona(
+                            resultSet.getString("cf"),
+                            resultSet.getString("nome"),
+                            resultSet.getString("cognome"),
+                            resultSet.getString("email")
+                    );
+                    listaPersone.add(personaDb);
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error: " + e);
+            }
+
+            for (Persona entita : listaPersone) {
+                if (entita.getCf().equalsIgnoreCase(persona.getCf())) {
+                    result = result == 2 ? 3 : 1;
+                }
+                if (entita.getEmail().equalsIgnoreCase(persona.getEmail())) {
+                    result = result == 1 ? 3 : 2;
+                }
+            }
+        }
+        return result;
     }
 
     private void stampaListaPersone(HttpServletRequest request, HttpServletResponse response, String personType) throws IOException, ServletException {
@@ -582,26 +732,34 @@ public class ScuolaServlet extends HttpServlet {
         }
 
         String sqlQuery = "SELECT * FROM " + nomeTabellaPersona;
-
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                Persona persona = new Persona(
-                        resultSet.getString("cf"),
-                        resultSet.getString("nome"),
-                        resultSet.getString("cognome"),
-                        resultSet.getString("sesso"),
-                        resultSet.getString("stato_nascita"),
-                        resultSet.getString("provincia_nascita"),
-                        resultSet.getString("comune_nascita"),
-                        resultSet.getDate("data_nascita").toLocalDate(),
-                        resultSet.getString("email")
-                );
-                persona.setAbilitato(resultSet.getInt("abilitato"));
-                persone.add(persona);
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                while (resultSet.next()) {
+                    Persona persona = new Persona(
+                            resultSet.getString("cf"),
+                            resultSet.getString("nome"),
+                            resultSet.getString("cognome"),
+                            resultSet.getString("sesso"),
+                            resultSet.getString("stato_nascita"),
+                            resultSet.getString("provincia_nascita"),
+                            resultSet.getString("comune_nascita"),
+                            resultSet.getDate("data_nascita").toLocalDate(),
+                            resultSet.getString("email")
+                    );
+                    persona.setAbilitato(resultSet.getInt("abilitato"));
+                    persone.add(persona);
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error" + e);
             }
-        } catch (SQLException e) {
-            System.out.println("Database error" + e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
 
         // Set the list of personas as a request attribute
         request.setAttribute("persone", persone);
@@ -612,8 +770,6 @@ public class ScuolaServlet extends HttpServlet {
         // dispatcher.forward(request, response);
         sendHtmlPage("listaPersone.jsp", request, response);
     }
-
-
 
 
     private void stampaAllieviDiClasse(HttpServletRequest request, HttpServletResponse response) {
@@ -631,19 +787,29 @@ public class ScuolaServlet extends HttpServlet {
                 "AND allievo_in_classe.livello_classe = " + livello + " " +
                 "AND allievo_in_classe.sezione_classe = '" + sezione + "'";
 
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            while (resultSet.next()) {
-                allievo = new Persona(
-                        resultSet.getString("cf"),
-                        resultSet.getString("nome"),
-                        resultSet.getString("cognome"),
-                        resultSet.getString("email")
-                );
-                miaListaAllievi.add(allievo);
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                while (resultSet.next()) {
+                    allievo = new Persona(
+                            resultSet.getString("cf"),
+                            resultSet.getString("nome"),
+                            resultSet.getString("cognome"),
+                            resultSet.getString("email")
+                    );
+                    miaListaAllievi.add(allievo);
+                }
+            } catch (SQLException e) {
+                System.out.println("Database error" + e);
             }
-        } catch (SQLException e) {
-            System.out.println("Database error" + e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
 
         //condivido l'arraylist con paggina jsp
         request.setAttribute("listaAllievi", miaListaAllievi);
@@ -652,6 +818,7 @@ public class ScuolaServlet extends HttpServlet {
         request.setAttribute("sezione", sezione);
         sendHtmlPage("stampaClasse.jsp", request, response);
     }
+
 
     private void sendHtmlPage(String sNomePagina, HttpServletRequest request, HttpServletResponse response) {
         response.setContentType("text/html");
@@ -679,57 +846,66 @@ public class ScuolaServlet extends HttpServlet {
         String sqlQuery = "SELECT * FROM " + nomeTabellaPersona + " WHERE cf = '" + cf + "'";
         response.setContentType("text/html");
         writer = response.getWriter();
-        try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
-            if (resultSet.next()) {
-                // Fetching persona details
-                persona = new Persona(
-                        resultSet.getString("cf"),
-                        resultSet.getString("nome"),
-                        resultSet.getString("cognome"),
-                        resultSet.getString("sesso"),
-                        resultSet.getString("stato_nascita"),
-                        resultSet.getString("provincia_nascita"),
-                        resultSet.getString("comune_nascita"),
-                        resultSet.getDate("data_nascita").toLocalDate(),
-                        resultSet.getString("email"),
-                        resultSet.getInt("abilitato")
-                );
+        //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+        myConn = mioDB.Connect();
+        if (myConn != null) {
+            System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+            try (ResultSet resultSet = mioDB.readInDb(sqlQuery)) {
+                if (resultSet.next()) {
+                    // Fetching persona details
+                    persona = new Persona(
+                            resultSet.getString("cf"),
+                            resultSet.getString("nome"),
+                            resultSet.getString("cognome"),
+                            resultSet.getString("sesso"),
+                            resultSet.getString("stato_nascita"),
+                            resultSet.getString("provincia_nascita"),
+                            resultSet.getString("comune_nascita"),
+                            resultSet.getDate("data_nascita").toLocalDate(),
+                            resultSet.getString("email"),
+                            resultSet.getInt("abilitato")
+                    );
 
-                // Print dettagli persona come alert
-                writer.println("<script>");
-                writer.println("alert('Dettagli " + nomeTabellaPersona + ":\\n" +
-                        "Codice Fiscale: " + persona.getCf() + "\\n" +
-                        "Nome: " + persona.getNome() + "\\n" +
-                        "Cognome: " + persona.getCognome() + "\\n" +
-                        "Sesso: " + persona.getSesso() + "\\n" +
-                        "Stato di Nascita: " + persona.getStatoNascita() + "\\n" +
-                        "Provincia di Nascita: " + persona.getProvinciaNascita() + "\\n" +
-                        "Comune di Nascita: " + persona.getComuneNascita() + "\\n" +
-                        "Data di Nascita: " + persona.getDataNascita() + "\\n" +
-                        "Email: " + persona.getEmail() + "\\n" +
-                        "Abilitato: " + persona.getAbilitato() + "');");
-                writer.println("</script>");
-                writer.flush();
-                if (isRedirectNeeded) {
-                    //se solo sercare persona per cf
-                    sendHtmlPage("welcome.jsp", request, response);
-                    return persona;
+                    // Print dettagli persona come alert
+                    writer.println("<script>");
+                    writer.println("alert('Dettagli " + nomeTabellaPersona + ":\\n" +
+                            "Codice Fiscale: " + persona.getCf() + "\\n" +
+                            "Nome: " + persona.getNome() + "\\n" +
+                            "Cognome: " + persona.getCognome() + "\\n" +
+                            "Sesso: " + persona.getSesso() + "\\n" +
+                            "Stato di Nascita: " + persona.getStatoNascita() + "\\n" +
+                            "Provincia di Nascita: " + persona.getProvinciaNascita() + "\\n" +
+                            "Comune di Nascita: " + persona.getComuneNascita() + "\\n" +
+                            "Data di Nascita: " + persona.getDataNascita() + "\\n" +
+                            "Email: " + persona.getEmail() + "\\n" +
+                            "Abilitato: " + persona.getAbilitato() + "');");
+                    writer.println("</script>");
+                    writer.flush();
+                    if (isRedirectNeeded) {
+                        //se solo sercare persona per cf
+                        sendHtmlPage("welcome.jsp", request, response);
+                        return persona;
+                    }
+                } else {
+                    // Persona non trovata
+                    writer.println("<script>");
+                    writer.println("alert('Persona con CF " + cf + " non trovata!');");
+                    writer.println("</script>");
+                    writer.flush();
+                    if (isRedirectNeeded) {
+                        sendHtmlPage("welcome.jsp", request, response);
+                        return null;
+                        // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+                    }
                 }
-            } else {
-                // Persona non trovata
-                writer.println("<script>");
-                writer.println("alert('Persona con CF " + cf + " non trovata!');");
-                writer.println("</script>");
-                writer.flush();
-                if (isRedirectNeeded) {
-                    sendHtmlPage("welcome.jsp", request, response);
-                    return null;
-                    // writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
-                }
+            } catch (SQLException e) {
+                throw new ServletException("Database error", e);
             }
-        } catch (SQLException e) {
-            throw new ServletException("Database error", e);
+            mioDB.disconnect();
+        } else {
+            System.out.println("Non ho connesso con db");
         }
+
         // writer.flush();
         return persona;
     }
@@ -746,28 +922,37 @@ public class ScuolaServlet extends HttpServlet {
             int nuovoStato = (persona.getAbilitato() == 0) ? 1 : 0;
 
             String sqlQuery = "UPDATE " + nomeTabellaPersona + " SET abilitato = " + nuovoStato + " WHERE cf = '" + persona.getCf() + "'";
-            boolean isUpdated = mioDB.writeInDb(sqlQuery);
+            //isConnected = mioDB.Connect("localhost", 8889, "gestione_scuola", "root", "root");
+            myConn = mioDB.Connect();
+            if (myConn != null) {
+                System.out.println("********** Connessione al DB avvenuta correttamente ***********");
+                boolean isUpdated = mioDB.writeInDb(sqlQuery);
 
-            writer.println("<script>");
-            if (isUpdated) {
-                writer.println("alert('Stato di " + nomeTabellaPersona + " è cambiato:\\n" +
-                        "Stato impostato: " + nuovoStato + "');");
+                writer.println("<script>");
+                if (isUpdated) {
+                    writer.println("alert('Stato di " + nomeTabellaPersona + " è cambiato:\\n" +
+                            "Stato impostato: " + nuovoStato + "');");
+                } else {
+                    writer.println("alert('Errore nel cambiare lo stato della persona.');");
+                }
+                //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+                writer.println("</script>");
+                writer.flush();
+                mioDB.disconnect();
+                sendHtmlPage("welcome.jsp", request, response);
+
             } else {
+                writer.println("<script>");
                 writer.println("alert('Errore nel cambiare lo stato della persona.');");
+                //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
+                writer.println("</script>");
+                writer.flush();
+                sendHtmlPage("welcome.jsp", request, response);
             }
-            //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
-            writer.println("</script>");
-            writer.flush();
-            sendHtmlPage("welcome.jsp", request, response);
-
         } else {
-            writer.println("<script>");
-            writer.println("alert('Errore nel cambiare lo stato della persona.');");
-            //  writer.println("window.location.href = '" + request.getContextPath() + "/welcome.jsp';");
-            writer.println("</script>");
-            writer.flush();
-            sendHtmlPage("welcome.jsp", request, response);
+            System.out.println("Non ho connesso con db");
         }
+
     }
 
     /**
@@ -778,7 +963,8 @@ public class ScuolaServlet extends HttpServlet {
     public void destroy() {
         System.out.println("Servlet is being destroyed");
         writer.close();
-        mioDB.disconnect();
+
+        // mioDB.disconnect();
     }
 
     private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {

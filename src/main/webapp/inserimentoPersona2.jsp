@@ -97,7 +97,7 @@ if (step != null) {
     } else if (step.equals("datiPersona")) {
 %>
 
-<form action="ScuolaServlet" method="POST">
+<form action="ScuolaServlet" method="POST" onsubmit="return validateCodiceFiscale()">
     <input type="hidden" name="formType" value="newPerson">
     <input type="hidden" name="step" value="datiPersona">
     <input type="hidden" name="personType" id="personType" value="<%= request.getParameter("personType") %>">
@@ -105,7 +105,10 @@ if (step != null) {
     <div class="row mb-3">
         <label for="inputCodiceFiscale" class="col-sm-3 col-form-label">Codice Fiscale</label>
         <div class="col-sm-9">
-            <input type="text" class="form-control" name="codiceFiscale" id="inputCodiceFiscale" maxlength="16" placeholder="Codice Fiscale" required>
+            <input type="text" class="form-control" name="codiceFiscale" id="inputCodiceFiscale" maxlength="16" placeholder="Codice Fiscale" required pattern="[A-Za-z]{6}[0-9]{2}[A-Za-z][0-9]{2}[A-Za-z][0-9]{3}[A-Za-z]">
+            <div class="invalid-feedback" id="codiceFiscaleFeedback">
+                Please enter a valid Codice Fiscale (e.g., ABCDEF12G34H567J).
+            </div>
         </div>
     </div>
 
@@ -153,7 +156,6 @@ if (step != null) {
 
     <button type="submit" class="btn btn-primary">Aggiungi <%= request.getParameter("personType") %></button>
 </form>
-
 <%
     }
 } else {
@@ -168,7 +170,17 @@ if (step != null) {
         <a href="<%= request.getContextPath() %>/welcome.jsp" class="btn btn-secondary">Torna alla Menu</a>
     </div>
 </div>
-
+<script>
+    function validateCodiceFiscale() {
+        var codiceFiscale = document.getElementById('inputCodiceFiscale').value;
+        var regex = /^[A-Za-z]{6}[0-9]{2}[A-Za-z][0-9]{2}[A-Za-z][0-9]{3}[A-Za-z]$/;
+        if (!regex.test(codiceFiscale)) {
+            document.getElementById('codiceFiscaleFeedback').style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
 </body>
 </html>

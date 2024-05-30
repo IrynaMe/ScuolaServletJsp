@@ -1,17 +1,62 @@
 package main.librerie;
 
+import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Properties;
 
 public class ManageDb {
 	public Connection myConn;
 	Statement statement;
 	ResultSet resultSet;
+	//private final String fileProperties ="src" + File.separator + "main" + File.separator + "resources" + File.separator + "config.properties";
+	//private final String fileProperties ="C:\\Users\\Studente4.5\\IdeaProjects\\ProvaServlet\\ServletIntellij2105\\src\\main\\resources\\config.properties";
+	private final String fileProperties = "config.properties";
 
 
+	//host, port, db sono in resouces/config.peroperties
+	public Connection Connect() {
+
+		Properties properties = new Properties();
+		myConn = null;
+		boolean isConn = false;
+
+		try (InputStream input = getClass().getClassLoader().getResourceAsStream(fileProperties)) {
+			if (input == null) {
+				System.out.println("Non posso trovare" + fileProperties);
+				return null;
+			}
+			properties.load(input);
+
+			String connection = properties.getProperty("url") + "://" +
+					properties.getProperty("host") + ":" +
+					properties.getProperty("port") + "/" +
+					properties.getProperty("database") + "?user=" +
+					properties.getProperty("user") + "&password=" +
+					properties.getProperty("password") + "&useSSL=false&serverTimezone=Europe/Rome";
+
+			myConn = DriverManager.getConnection(connection);
+			if (myConn != null) {
+				System.out.println("Connesso a db con successo!");
+				//isConn = true;
+			} else {
+				//isConn = false;
+				System.out.println("NON connesso al db");
+			}
+		} catch (IOException e) {
+			System.out.println("Problema in lettura file: " + e.getMessage());
+		} catch (SQLException e) {
+			System.out.println("Non posso fare la connessione alla db: " + e.getMessage());
+		}
+		return myConn;
+	}
+
+
+
+/*
 	public boolean Connect(String sIpServer, int iPort, String sNomeDb, String sNomeUtente, String sPass)
 	{
 		String sConnectString;
@@ -26,7 +71,7 @@ public class ManageDb {
 			e.printStackTrace();
 		}
 		return false;
-	}
+	}*/
 
 	public boolean writeInDb(String sSqlQuery) {
 		boolean isExecuted = false;
@@ -63,6 +108,9 @@ public class ManageDb {
 		}
 		return false;
 	}
-	
+
+	public Connection getMyConn() {
+		return myConn;
+	}
 	
 }

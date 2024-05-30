@@ -3,7 +3,7 @@
 <head>
     <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
     <%@ page import="java.util.ArrayList" %>
-    <%@ page import="main.servlet.Persona" %>
+    <%@ page import="main.model.Persona" %>
       <%@ page import="java.lang.Integer" %>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">

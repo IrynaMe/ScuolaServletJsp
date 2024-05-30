@@ -1,4 +1,4 @@
-package main.servlet;
+package main.model;
 
 public enum Entita {
     DOCENTE("Operazioni con docente"),
